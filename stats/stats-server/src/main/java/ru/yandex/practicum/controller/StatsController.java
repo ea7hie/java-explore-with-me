@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.StatisticDtoGet;
 import ru.yandex.practicum.StatisticDtoPost;
-import ru.yandex.practicum.model.Statistic;
 import ru.yandex.practicum.service.StatisticsService;
 
 import java.util.List;
@@ -34,19 +33,5 @@ public class StatsController {
     ) {
         log.info("GET /stats - Getting statistic for uris: {} from: {} to {}, unique: {}", uris, start, end, unique);
         return statisticsService.getStats(start, end, uris, unique);
-    }
-
-    @GetMapping("/all")
-    @ResponseStatus(HttpStatus.OK)
-    public List<Statistic> getAll() {
-        //log.info("GET /stats - Getting statistic for uris: {} from: {} to {}, unique: {}", uris, start, end, unique);
-        return statisticsService.getAll();
-    }
-
-    @GetMapping("/dto")
-    @ResponseStatus(HttpStatus.OK)
-    public List<StatisticDtoGet> getAllDto() {
-        //log.info("GET /stats - Getting statistic for uris: {} from: {} to {}, unique: {}", uris, start, end, unique);
-        return statisticsService.getAllDTo();
     }
 }

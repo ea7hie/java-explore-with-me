@@ -1,17 +1,12 @@
 package ru.yandex.practicum;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import ru.yandex.practicum.exception.StatsClientException;
 
 @Service
 @Slf4j
 public class StatsClient {
-    private final RestClient restClient;
+   /* private final RestClient restClient;
 
     @Autowired
     public StatsClient(@Value("${stats-server.url}") String statsUrl) {
