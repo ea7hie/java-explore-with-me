@@ -1,12 +1,23 @@
 package ru.yandex.practicum;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import ru.yandex.practicum.exception.StatsClientException;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @Slf4j
 public class StatsClient {
-   /* private final RestClient restClient;
+    private final RestClient restClient;
 
     @Autowired
     public StatsClient(@Value("${stats-server.url}") String statsUrl) {
@@ -20,7 +31,7 @@ public class StatsClient {
                 .build();
     }
 
-   /* public void hit(StatisticDto statisticDto) {
+    public void hit(StatisticDtoPost statisticDto) {
         try {
             log.info("Sending statistics hit request to client");
             restClient.post()
@@ -30,11 +41,11 @@ public class StatsClient {
                     .toBodilessEntity();
         } catch (Exception e) {
             log.error("Error saving statistics in client: {}, {}", statisticDto, e.getMessage());
-            throw new StatisticClientException("Error sending statistics", e);
+            throw new StatsClientException("Error sending statistics", e);
         }
     }
 
-    public List<GetStatisticDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+    public List<StatisticDtoGet> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         try {
             log.info("Requesting statistics from client");
@@ -51,7 +62,7 @@ public class StatsClient {
                     });
         } catch (Exception e) {
             log.error("Error retrieving statistics from client: {}", e.getMessage());
-            throw new StatisticClientException("Error getting statistics", e);
+            throw new StatsClientException("Error getting statistics", e);
         }
-    }*/
+    }
 }
