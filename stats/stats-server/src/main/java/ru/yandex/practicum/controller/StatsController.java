@@ -24,12 +24,11 @@ public class StatsController {
     }
 
     @GetMapping("/stats")
-    @ResponseStatus(HttpStatus.OK)
     public List<StatisticDtoGet> getStatistic(
             @RequestParam String start,
             @RequestParam String end,
-            @RequestParam(required = false, defaultValue = "") List<String> uris,
-            @RequestParam(required = false, defaultValue = "false") Boolean unique
+            @RequestParam(defaultValue = "") List<String> uris,
+            @RequestParam(defaultValue = "false") Boolean unique
     ) {
         log.info("GET /stats - Getting statistic for uris: {} from: {} to {}, unique: {}", uris, start, end, unique);
         return statisticsService.getStats(start, end, uris, unique);
