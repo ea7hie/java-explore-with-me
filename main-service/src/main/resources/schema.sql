@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS events (
     created_on TIMESTAMP NOT NULL,
     description VARCHAR(7000) NOT NULL,
     event_date TIMESTAMP NOT NULL,
-    location_id BIGINT REFERENCES locations (id) ON DELETE CASCADE  NOT NULL,
+    location_id BIGINT REFERENCES locations (id) ON DELETE CASCADE NOT NULL,
     paid BOOLEAN DEFAULT false NOT NULL,
     participant_limit INT DEFAULT 0 NOT NULL,
     published_on TIMESTAMP,

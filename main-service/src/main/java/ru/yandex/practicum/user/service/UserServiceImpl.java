@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.exception.DuplicateException;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.user.dao.UserRepository;
-import ru.yandex.practicum.user.dto.NewUserRequest;
+import ru.yandex.practicum.user.dto.UserDtoPost;
 import ru.yandex.practicum.user.dto.UserDto;
 import ru.yandex.practicum.user.dto.mapper.UserMapper;
 import ru.yandex.practicum.user.model.User;
@@ -21,6 +21,17 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
+    @Transactional
+    @Override
+    public UserDto add(UserDtoPost userDtoPost) {
+        if (userRepository.existsByEmail(userDtoPost.getEmail())) {
+            throw new DuplicateException("Email already exists: " + userDtoPost.getEmail());
+        }
+        User user = userRepository.save(UserMapper.toUser(userDtoPost));
+        log.info("User was created: {}", user);
+        return UserMapper.toUserDto(user);
+    }
+
     @Override
     public List<UserDto> getAll(List<Long> ids, int from, int size) {
         List<User> users = (ids == null || ids.isEmpty()) ? userRepository.findAll()
@@ -31,17 +42,6 @@ public class UserServiceImpl implements UserService {
                 .limit(size)
                 .map(UserMapper::toUserDto)
                 .toList();
-    }
-
-    @Transactional
-    @Override
-    public UserDto add(NewUserRequest newUserRequest) {
-        if (userRepository.existsByEmail(newUserRequest.getEmail())) {
-            throw new DuplicateException("Email already exists: " + newUserRequest.getEmail());
-        }
-        User user = userRepository.save(UserMapper.toUser(newUserRequest));
-        log.info("User was created: {}", user);
-        return UserMapper.toUserDto(user);
     }
 
     @Transactional
