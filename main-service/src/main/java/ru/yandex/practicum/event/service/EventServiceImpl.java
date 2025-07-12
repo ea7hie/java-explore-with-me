@@ -10,14 +10,15 @@ import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.event.dto.get.EventFullDto;
 import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
 import ru.yandex.practicum.event.dto.mapper.EventMapper;
-import ru.yandex.practicum.event.location.Location;
-import ru.yandex.practicum.event.location.LocationDto;
-import ru.yandex.practicum.event.location.LocationMapper;
-import ru.yandex.practicum.event.location.LocationRepository;
 import ru.yandex.practicum.event.model.Event;
 import ru.yandex.practicum.event.model.State;
 import ru.yandex.practicum.event.model.StateActionForAdmin;
 import ru.yandex.practicum.exception.NotFoundException;
+import ru.yandex.practicum.exception.OperationNotAllowedException;
+import ru.yandex.practicum.location.Location;
+import ru.yandex.practicum.location.LocationDto;
+import ru.yandex.practicum.location.LocationMapper;
+import ru.yandex.practicum.location.LocationRepository;
 import ru.yandex.practicum.request.dao.RequestRepository;
 import ru.yandex.practicum.request.model.Request;
 import ru.yandex.practicum.request.model.Status;
@@ -68,6 +69,18 @@ public class EventServiceImpl implements EventService {
         Event oldEventForUpdate = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
 
+        if (LocalDateTime.now().plusHours(1).isBefore(oldEventForUpdate.getEventDate())) {
+            throw new OperationNotAllowedException(
+                    "Cannot publish the event because it's eventDate is less than an hour away");
+        }
+
+        if (oldEventForUpdate.getState() != State.PENDING) {
+            throw new OperationNotAllowedException(
+                    "Cannot publish the event because it's not in the right state: " + oldEventForUpdate.getState());
+        }
+
+        oldEventForUpdate = getEventWithUpdatedState(updateEventAdminRequest.getStateAction(), oldEventForUpdate);
+
         oldEventForUpdate.setAnnotation(updateEventAdminRequest.getAnnotation());
         oldEventForUpdate.setCategory(
                 getNewCategoryForUpdatingEvent(oldEventForUpdate.getCategory(), updateEventAdminRequest.getCategory())
@@ -90,8 +103,7 @@ public class EventServiceImpl implements EventService {
         );
         oldEventForUpdate.setTitle(updateEventAdminRequest.getTitle());
 
-        return EventMapper.toEventFullDto(
-                getEventWithUpdatedState(updateEventAdminRequest.getStateAction(), oldEventForUpdate),
+        return EventMapper.toEventFullDto(oldEventForUpdate,
                 requestRepository.getConfirmedRequests(oldEventForUpdate.getId(), Status.CONFIRMED),
                 statsService.getEventsView(List.of(oldEventForUpdate)).get(oldEventForUpdate.getId())
         );
@@ -184,6 +196,11 @@ public class EventServiceImpl implements EventService {
 
     private Event getEventWithUpdatedState(StateActionForAdmin stateActionForAdmin, Event eventForUpdate) {
         if (stateActionForAdmin == StateActionForAdmin.REJECT_EVENT) {
+            if (eventForUpdate.getState() == State.PUBLISHED) {
+                throw new OperationNotAllowedException(
+                        "Cannot publish the event because it's not in the right state: PUBLISHED");
+            }
+
             eventForUpdate.setState(State.CANCELLED);
             return eventForUpdate;
         }

@@ -1,4 +1,4 @@
-package ru.yandex.practicum.event.location;
+package ru.yandex.practicum.location;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
