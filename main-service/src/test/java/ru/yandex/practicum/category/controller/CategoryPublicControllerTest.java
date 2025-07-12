@@ -79,6 +79,7 @@ public class CategoryPublicControllerTest {
 
         verify(service).findById(validId);
     }
+
     @Test
     void getCategoryById_NonExistingId_Returns404() throws Exception {
         Long invalidId = 999L;

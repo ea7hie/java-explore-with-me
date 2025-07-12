@@ -44,16 +44,12 @@ public class UserAdminControllerTest {
         ResultActions res = mockMvc.perform(
                 post("/admin/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                    {"name":"John Doe", "email":"john@example.com"}
-                                """)
+                        .content("{\"name\":\"John Doe\", \"email\":\"john@example.com\"}")
         );
 
         res.andExpect(status().isCreated())
                 .andExpect(content().json(
-                        """
-                                {"id":1, "name":"John Doe", "email":"john@example.com"}
-                                """
+                        "{\"id\":1, \"name\":\"John Doe\", \"email\":\"john@example.com\"}"
                 ));
 
         verify(userService, times(1)).add(validUserDto);
@@ -64,10 +60,7 @@ public class UserAdminControllerTest {
         ResultActions res = mockMvc.perform(
                 post("/admin/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"", "email":"john@example.com"}
-                                """
-                        )
+                        .content("{\"name\":\"\", \"email\":\"john@example.com\"}")
         );
 
         res.andExpect(status().isBadRequest());

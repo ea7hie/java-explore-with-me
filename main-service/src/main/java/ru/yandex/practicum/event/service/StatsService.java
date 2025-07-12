@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.StatisticDtoGet;
+import ru.yandex.practicum.StatisticDtoPost;
 import ru.yandex.practicum.StatsClient;
 import ru.yandex.practicum.event.model.Event;
 
@@ -53,5 +54,10 @@ public class StatsService {
             }
         });
         return views;
+    }
+
+    public void sendHit(String uri, String ip) {
+        StatisticDtoPost statisticDtoPost = new StatisticDtoPost("main-service", uri, ip, LocalDateTime.now());
+        statClient.hit(statisticDtoPost);
     }
 }

@@ -6,11 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.category.dao.CategoryRepository;
 import ru.yandex.practicum.category.model.Category;
+import ru.yandex.practicum.event.comparators.EventComparatorByEventDate;
+import ru.yandex.practicum.event.comparators.EventShortDtoComparatorByViews;
 import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.event.dto.get.EventFullDto;
+import ru.yandex.practicum.event.dto.get.EventShortDto;
 import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
 import ru.yandex.practicum.event.dto.mapper.EventMapper;
 import ru.yandex.practicum.event.model.Event;
+import ru.yandex.practicum.event.model.Sort;
 import ru.yandex.practicum.event.model.State;
 import ru.yandex.practicum.event.model.StateActionForAdmin;
 import ru.yandex.practicum.exception.NotFoundException;
@@ -25,6 +29,7 @@ import ru.yandex.practicum.request.model.Status;
 import ru.yandex.practicum.user.dao.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,7 +64,7 @@ public class EventServiceImpl implements EventService {
 
         return distinctEvents.stream()
                 .map(event -> EventMapper.toEventFullDto(event,
-                        requestRepository.getConfirmedRequests(event.getId(), Status.CONFIRMED),
+                        getConfirmedRequests(event),
                         eventsView.get(event.getId())))
                 .collect(Collectors.toList());
     }
@@ -109,6 +114,91 @@ public class EventServiceImpl implements EventService {
         );
     }
 
+    @Override
+    public List<EventShortDto> findEventsByText(String text, List<Long> categories, boolean paid,
+                                                LocalDateTime rangeStart, LocalDateTime rangeEnd,
+                                                boolean onlyAvailable, Sort sort, int from, int size,
+                                                String ip, String uri) {
+        statsService.sendHit(uri, ip);
+
+        List<Event> foundedEvents;
+
+        if (text.isEmpty()) {
+            foundedEvents = eventRepository.findAllByState(State.PUBLISHED);
+        } else {
+            foundedEvents = eventRepository.findAllByAnnotationContainsIgnoreCaseOrDescriptionContainsIgnoreCase(text, text)
+                    .stream()
+                    .filter(event -> event.getState() == State.PUBLISHED)
+                    .collect(Collectors.toList());
+        }
+
+        foundedEvents = foundedEvents.stream()
+                .distinct()
+                .filter(event -> event.getPaid() == paid)
+                .collect(Collectors.toList());
+
+        foundedEvents = getEventsFilterByCategories(categories, foundedEvents);
+
+        rangeStart = rangeStart == null ? LocalDateTime.now() : rangeStart;
+
+        foundedEvents = getEventsFilterByRangeStart(rangeStart, foundedEvents);
+        foundedEvents = getEventsFilterByRangeEnd(rangeEnd, foundedEvents);
+
+        Map<Event, Long> amountConfirmedRequests = new HashMap<>();
+        foundedEvents = foundedEvents.stream()
+                .peek(event -> {
+                    amountConfirmedRequests.put(event, getConfirmedRequests(event));
+                })
+                .collect(Collectors.toList());
+
+        if (onlyAvailable) {
+            foundedEvents = foundedEvents.stream()
+                    .filter(event -> event.getParticipantLimit() < amountConfirmedRequests.get(event))
+                    .collect(Collectors.toList());
+        }
+
+        Map<Long, Long> eventsView;
+        if (sort == Sort.EVENT_DATE) {
+            foundedEvents = foundedEvents.stream()
+                    .sorted(new EventComparatorByEventDate())
+                    .skip(from)
+                    .limit(size)
+                    .collect(Collectors.toList());
+        } else {
+            eventsView = statsService.getEventsView(foundedEvents);
+            return foundedEvents.stream()
+                    .map(event -> EventMapper.toEventShortDto(event,
+                            amountConfirmedRequests.get(event),
+                            eventsView.get(event.getId())))
+                    .sorted(new EventShortDtoComparatorByViews())
+                    .skip(from)
+                    .limit(size)
+                    .collect(Collectors.toList());
+        }
+
+        eventsView = statsService.getEventsView(foundedEvents);
+        return foundedEvents.stream()
+                .map(event -> EventMapper.toEventShortDto(event,
+                        amountConfirmedRequests.get(event),
+                        eventsView.get(event.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EventFullDto getEvent(long eventId, String ip, String uri) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+        if (event.getState() != State.PUBLISHED) {
+            throw new NotFoundException(String.format("Event with id=%d was not found", eventId));
+        }
+
+        statsService.sendHit(uri, ip);
+
+        return EventMapper.toEventFullDto(event,
+                getConfirmedRequests(event),
+                statsService.getEventsView(List.of(event)).get(eventId));
+    }
+
     private List<Request> getRequestsFilterByUserIds(List<Long> users) {
         return users.isEmpty() ? requestRepository.findAllByStatus(Status.CONFIRMED)
                 : requestRepository.findByRequesterIdInAndStatus(users, Status.CONFIRMED);
@@ -133,9 +223,8 @@ public class EventServiceImpl implements EventService {
             return distinctEvents;
         }
 
-        List<Category> categoryList = categoryRepository.findAllById(categories);
         return distinctEvents.stream()
-                .filter(event -> categoryList.contains(event.getCategory()))
+                .filter(event -> categories.contains(event.getCategory().getId()))
                 .collect(Collectors.toList());
     }
 
@@ -208,5 +297,9 @@ public class EventServiceImpl implements EventService {
         eventForUpdate.setState(State.PUBLISHED);
         eventForUpdate.setPublishedOn(LocalDateTime.now());
         return eventForUpdate;
+    }
+
+    private long getConfirmedRequests(Event event) {
+        return requestRepository.getConfirmedRequests(event.getId(), Status.CONFIRMED);
     }
 }
