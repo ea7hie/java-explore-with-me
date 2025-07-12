@@ -79,4 +79,16 @@ public class ErrorHandler {
         log.error("Category is not empty: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(OperationNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleOperationNotAllowed(OperationNotAllowedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "For the requested operation the conditions are not met",
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                LocalDateTime.now().format(dateTimeFormatter)
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
 }

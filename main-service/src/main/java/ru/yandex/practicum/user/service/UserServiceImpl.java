@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.exception.DuplicateException;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.user.dao.UserRepository;
-import ru.yandex.practicum.user.dto.UserDtoPost;
 import ru.yandex.practicum.user.dto.UserDto;
+import ru.yandex.practicum.user.dto.UserDtoPost;
 import ru.yandex.practicum.user.dto.mapper.UserMapper;
 import ru.yandex.practicum.user.model.User;
 
@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDto> getAll(List<Long> ids, int from, int size) {
         List<User> users = (ids == null || ids.isEmpty()) ? userRepository.findAll()
-                : userRepository.findAllByIdIn(ids);
+                : userRepository.findAllById(ids);
 
         return users.stream()
                 .skip(from)
