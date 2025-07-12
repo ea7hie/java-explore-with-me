@@ -5,6 +5,7 @@ import ru.yandex.practicum.event.model.Event;
 import ru.yandex.practicum.event.model.State;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
     boolean existsByCategoryId(Long id);
@@ -12,4 +13,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findAllByAnnotationContainsIgnoreCaseOrDescriptionContainsIgnoreCase(String annotation, String description);
 
     List<Event> findAllByState(State state);
+
+    List<Event> findAllByInitiatorId(long initiatorId);
+
+    Optional<Event> findByInitiatorIdAndEventId(long initiatorId, long eventId);
 }

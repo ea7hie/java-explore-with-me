@@ -2,7 +2,9 @@ package ru.yandex.practicum.event.service;
 
 import ru.yandex.practicum.event.dto.get.EventFullDto;
 import ru.yandex.practicum.event.dto.get.EventShortDto;
+import ru.yandex.practicum.event.dto.in.NewEventDto;
 import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
+import ru.yandex.practicum.event.dto.in.UpdateEventUserRequest;
 import ru.yandex.practicum.event.model.Sort;
 import ru.yandex.practicum.event.model.State;
 
@@ -24,4 +26,12 @@ public interface EventService {
                                          String ip, String uri);
 
     EventFullDto getEvent(long eventId, String ip, String uri);
+
+    List<EventShortDto> findEventsByInitiatorId(long userId, int from, int size);
+
+    EventFullDto create(long userId, NewEventDto newEventDto);
+
+    EventFullDto findEventByInitiatorIdAndEventId(long userId, long eventId);
+
+    EventFullDto updateEventsByInitiatorIdAndEventId(long userId, long eventId, UpdateEventUserRequest updateEvent);
 }

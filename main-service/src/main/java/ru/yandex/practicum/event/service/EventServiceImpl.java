@@ -11,12 +11,11 @@ import ru.yandex.practicum.event.comparators.EventShortDtoComparatorByViews;
 import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.event.dto.get.EventFullDto;
 import ru.yandex.practicum.event.dto.get.EventShortDto;
+import ru.yandex.practicum.event.dto.in.NewEventDto;
 import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
+import ru.yandex.practicum.event.dto.in.UpdateEventUserRequest;
 import ru.yandex.practicum.event.dto.mapper.EventMapper;
-import ru.yandex.practicum.event.model.Event;
-import ru.yandex.practicum.event.model.Sort;
-import ru.yandex.practicum.event.model.State;
-import ru.yandex.practicum.event.model.StateActionForAdmin;
+import ru.yandex.practicum.event.model.*;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.exception.OperationNotAllowedException;
 import ru.yandex.practicum.location.Location;
@@ -27,11 +26,13 @@ import ru.yandex.practicum.request.dao.RequestRepository;
 import ru.yandex.practicum.request.model.Request;
 import ru.yandex.practicum.request.model.Status;
 import ru.yandex.practicum.user.dao.UserRepository;
+import ru.yandex.practicum.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,7 +47,7 @@ public class EventServiceImpl implements EventService {
     private final StatsService statsService;
     private final LocationRepository locationRepository;
 
-
+    //ADMIN
     @Override
     public List<EventFullDto> findEvents(List<Long> users, List<State> states, List<Long> categories,
                                          LocalDateTime rangeStart, LocalDateTime rangeEnd,
@@ -108,12 +109,15 @@ public class EventServiceImpl implements EventService {
         );
         oldEventForUpdate.setTitle(updateEventAdminRequest.getTitle());
 
+        oldEventForUpdate = eventRepository.save(oldEventForUpdate);
+
         return EventMapper.toEventFullDto(oldEventForUpdate,
                 requestRepository.getConfirmedRequests(oldEventForUpdate.getId(), Status.CONFIRMED),
                 statsService.getEventsView(List.of(oldEventForUpdate)).get(oldEventForUpdate.getId())
         );
     }
 
+    //PUBLIC
     @Override
     public List<EventShortDto> findEventsByText(String text, List<Long> categories, boolean paid,
                                                 LocalDateTime rangeStart, LocalDateTime rangeEnd,
@@ -199,6 +203,102 @@ public class EventServiceImpl implements EventService {
                 statsService.getEventsView(List.of(event)).get(eventId));
     }
 
+    //PRIVATE
+    @Override
+    public List<EventShortDto> findEventsByInitiatorId(long userId, int from, int size) {
+        List<Event> events = eventRepository.findAllByInitiatorId(userId).stream()
+                .skip(from)
+                .limit(size)
+                .collect(Collectors.toList());
+
+        Map<Long, Long> eventsView = statsService.getEventsView(events);
+
+        return events.stream()
+                .map(event -> EventMapper.toEventShortDto(event,
+                        getConfirmedRequests(event),
+                        eventsView.get(event.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EventFullDto create(long userId, NewEventDto newEventDto) {
+        User initiator = userRepository.findById(userId).orElseThrow(() ->
+                new NotFoundException(String.format("User with id=%d was not found", userId)));
+
+        if (LocalDateTime.now().plusHours(2).isAfter(newEventDto.getEventDate())) {
+            throw new OperationNotAllowedException("должно содержать дату, которая еще не наступила");
+        }
+
+        LocationDto newLocationDto = newEventDto.getLocation();
+        Optional<Location> opt = locationRepository.findByLatAndLon(newLocationDto.getLat(), newLocationDto.getLon());
+        Location newLocation = opt.orElseGet(() ->
+                locationRepository.save(LocationMapper.toLocation(newLocationDto, -1L)));
+
+        Category category = categoryRepository.findById(newEventDto.getCategory()).orElseThrow(() ->
+                new NotFoundException(String.format("Category with id=%d was not found", newEventDto.getCategory())));
+
+        Event saved = eventRepository.save(EventMapper.toEvent(newEventDto, category, initiator, newLocation));
+
+        return EventMapper.toEventFullDto(saved, 0L, 0L);
+    }
+
+    @Override
+    public EventFullDto findEventByInitiatorIdAndEventId(long userId, long eventId) {
+        Event event = eventRepository.findByInitiatorIdAndEventId(userId, eventId).orElseThrow(() -> new NotFoundException(
+                String.format("Event with id=%d from initiator with id=%d was not found", eventId, userId)));
+
+        return EventMapper.toEventFullDto(event,
+                getConfirmedRequests(event),
+                statsService.getEventsView(List.of(event)).get(event));
+    }
+
+    @Override
+    public EventFullDto updateEventsByInitiatorIdAndEventId(long userId, long eventId, UpdateEventUserRequest updateEvent) {
+        Event oldEvent = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException(
+                String.format("Event with id=%d from initiator with id=%d was not found", eventId, userId)));
+
+        if (oldEvent.getState() == State.PUBLISHED) {
+            throw new OperationNotAllowedException("Only pending or canceled events can be changed");
+        }
+
+        if (LocalDateTime.now().plusHours(2).isAfter(oldEvent.getEventDate())) {
+            throw new OperationNotAllowedException(
+                    "Cannot update the event because it's eventDate is less than an hour away");
+        }
+
+        if (updateEvent.getStateAction() == StateActionForUser.CANCEL_REVIEW) {
+            oldEvent.setState(State.CANCELLED);
+            return EventMapper.toEventFullDto(oldEvent, 0L, 0L);
+        }
+
+        oldEvent.setAnnotation(updateEvent.getAnnotation());
+        oldEvent.setCategory(
+                getNewCategoryForUpdatingEvent(oldEvent.getCategory(), updateEvent.getCategory())
+        );
+        oldEvent.setDescription(updateEvent.getDescription());
+        oldEvent.setEventDate(
+                getNewEventDateForUpdatingEvent(oldEvent.getEventDate(), updateEvent.getEventDate())
+        );
+        oldEvent.setLocation(getNewLocationForUpdatingEvent(
+                oldEvent.getLocation(), updateEvent.getLocation())
+        );
+        oldEvent.setPaid(
+                getNewPaidForUpdatingEvent(oldEvent.getPaid(), updateEvent.getPaid())
+        );
+        oldEvent.setParticipantLimit(getNewParticipantLimitForUpdatingEvent(
+                oldEvent.getParticipantLimit(), updateEvent.getParticipantLimit())
+        );
+        oldEvent.setRequestModeration(getNewRequestModerationForUpdatingEvent(
+                oldEvent.getRequestModeration(), updateEvent.getRequestModeration())
+        );
+        oldEvent.setTitle(updateEvent.getTitle());
+
+        oldEvent = eventRepository.save(oldEvent);
+
+        return EventMapper.toEventFullDto(oldEvent, 0L, 0L);
+    }
+
+    //NON-BUSINESS
     private List<Request> getRequestsFilterByUserIds(List<Long> users) {
         return users.isEmpty() ? requestRepository.findAllByStatus(Status.CONFIRMED)
                 : requestRepository.findByRequesterIdInAndStatus(users, Status.CONFIRMED);
@@ -258,16 +358,15 @@ public class EventServiceImpl implements EventService {
     }
 
     private LocalDateTime getNewEventDateForUpdatingEvent(LocalDateTime oldEventDate, LocalDateTime newEventDate) {
-        return (oldEventDate.isEqual(newEventDate) || newEventDate == null) ? oldEventDate : newEventDate;
+        return (oldEventDate.isEqual(newEventDate) || newEventDate == null
+                || LocalDateTime.now().minusHours(2).isAfter(newEventDate)) ? oldEventDate : newEventDate;
     }
 
     private Location getNewLocationForUpdatingEvent(Location oldLocation, LocationDto newLocationDto) {
         LocationDto oldLocationDto = LocationMapper.toLocationDto(oldLocation);
         return (oldLocationDto.equals(newLocationDto) || newLocationDto == null)
                 ? oldLocation
-                : locationRepository.findByLatAndLon(newLocationDto.getLat(), newLocationDto.getLon())
-                .orElseThrow(() -> new NotFoundException(String.format("Location with lat=%f and lon=%f was not found",
-                        newLocationDto.getLat(), newLocationDto.getLon())));
+                : saveNewLocationOrGetAddedBefore(newLocationDto);
     }
 
     private Boolean getNewPaidForUpdatingEvent(Boolean oldPaid, Boolean newPaid) {
@@ -301,5 +400,10 @@ public class EventServiceImpl implements EventService {
 
     private long getConfirmedRequests(Event event) {
         return requestRepository.getConfirmedRequests(event.getId(), Status.CONFIRMED);
+    }
+
+    private Location saveNewLocationOrGetAddedBefore(LocationDto newLocationDto) {
+        Optional<Location> opt = locationRepository.findByLatAndLon(newLocationDto.getLat(), newLocationDto.getLon());
+        return opt.orElseGet(() -> locationRepository.save(LocationMapper.toLocation(newLocationDto, -1L)));
     }
 }

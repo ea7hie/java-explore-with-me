@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.event.dto.get.EventFullDto;
 import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
@@ -16,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 @RequestMapping("/admin/events")
 public class EventAdminController {
     private final EventService eventService;
@@ -33,6 +32,7 @@ public class EventAdminController {
     }
 
     @PatchMapping("/eventId")
+    @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto updateEvent(@PathVariable long eventId,
                                     @RequestBody @Valid UpdateEventAdminRequest updateEventAdminRequest) {
         return eventService.updateEvent(eventId, updateEventAdminRequest);
