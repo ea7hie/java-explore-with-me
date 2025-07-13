@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.UniqueElements;
 import ru.yandex.practicum.request.model.Status;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -15,7 +16,7 @@ import java.util.List;
 public class EventRequestStatusUpdateRequest {
     @NotEmpty
     @UniqueElements
-    List<Long> requestIds;
+    List<Long> requestIds = new ArrayList<>();
 
     Status status;
 }

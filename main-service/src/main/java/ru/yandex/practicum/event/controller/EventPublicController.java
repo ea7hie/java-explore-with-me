@@ -30,7 +30,7 @@ public class EventPublicController {
                                                 @RequestParam(required = false) String rangeStart,
                                                 @RequestParam(required = false) String rangeEnd,
                                                 @RequestParam(defaultValue = "false") boolean onlyAvailable,
-                                                @RequestParam(defaultValue = "Sort.EVENT_DATE") Sort sort,
+                                                @RequestParam(required = false) String sort,
                                                 @PositiveOrZero @RequestParam(defaultValue = "0") int from,
                                                 @Positive @RequestParam(defaultValue = "10") int size,
                                                 HttpServletRequest request) {
@@ -41,8 +41,9 @@ public class EventPublicController {
 
         LocalDateTime start = (rangeStart == null) ? null : LocalDateTime.parse(rangeStart, formatter);
         LocalDateTime end = (rangeEnd == null) ? null : LocalDateTime.parse(rangeEnd, formatter);
+        Sort sorting = sort == null ? Sort.EVENT_DATE : Sort.valueOf(sort);
         return eventService.findEventsByText(text, categories, paid, start, end,
-                onlyAvailable, sort, from, size, ip, uri);
+                onlyAvailable, sorting, from, size, ip, uri);
     }
 
     @GetMapping("/{eventId}")

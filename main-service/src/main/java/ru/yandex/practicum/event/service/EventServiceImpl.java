@@ -54,14 +54,6 @@ public class EventServiceImpl implements EventService {
     public List<EventFullDto> findEvents(List<Long> users, List<State> states, List<Long> categories,
                                          LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                          int from, int size) {
-
-        /*List<Request> allRequests = getRequestsFilterByUserIds(users);
-        if (allRequests.isEmpty()) {
-            return List.of();
-        }
-
-        List<Event> distinctEvents = getDistinctEventsFromRequests(allRequests);*/
-
         List<Event> distinctEvents = getDistinctEvents(users);
         if (distinctEvents.isEmpty()) {
             return List.of();
@@ -106,7 +98,7 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         Event oldEventForUpdate = getEventOrThrow(eventId);
 
-        if (LocalDateTime.now().plusHours(1).isBefore(oldEventForUpdate.getEventDate())) {
+        if (LocalDateTime.now().plusHours(1).isAfter(oldEventForUpdate.getEventDate())) {
             throw new OperationNotAllowedException(
                     "Cannot publish the event because it's eventDate is less than an hour away");
         }
@@ -142,10 +134,10 @@ public class EventServiceImpl implements EventService {
 
         oldEventForUpdate = eventRepository.save(oldEventForUpdate);
 
+        long views = statsService.getEventsView(List.of(oldEventForUpdate)).getOrDefault(oldEventForUpdate.getId(), 0L);
         return EventMapper.toEventFullDto(oldEventForUpdate,
                 requestRepository.getConfirmedRequests(oldEventForUpdate.getId(), Status.CONFIRMED),
-                statsService.getEventsView(List.of(oldEventForUpdate)).get(oldEventForUpdate.getId())
-        );
+                views);
     }
 
     //PUBLIC
@@ -204,7 +196,7 @@ public class EventServiceImpl implements EventService {
             return foundedEvents.stream()
                     .map(event -> EventMapper.toEventShortDto(event,
                             amountConfirmedRequests.get(event),
-                            eventsView.get(event.getId())))
+                            eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                     .sorted(new EventShortDtoComparatorByViews())
                     .skip(from)
                     .limit(size)
@@ -215,7 +207,7 @@ public class EventServiceImpl implements EventService {
         return foundedEvents.stream()
                 .map(event -> EventMapper.toEventShortDto(event,
                         amountConfirmedRequests.get(event),
-                        eventsView.get(event.getId())))
+                        eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -230,7 +222,7 @@ public class EventServiceImpl implements EventService {
 
         return EventMapper.toEventFullDto(event,
                 getConfirmedRequests(event),
-                statsService.getEventsView(List.of(event)).get(eventId));
+                statsService.getEventsView(List.of(event)).getOrDefault(eventId, 0L));
     }
 
     //PRIVATE
@@ -284,7 +276,7 @@ public class EventServiceImpl implements EventService {
 
         return EventMapper.toEventFullDto(event,
                 getConfirmedRequests(event),
-                statsService.getEventsView(List.of(event)).get(event));
+                statsService.getEventsView(List.of(event)).getOrDefault(event, 0L));
     }
 
     @Override
@@ -304,7 +296,7 @@ public class EventServiceImpl implements EventService {
 
         if (updateEvent.getStateAction() == StateActionForUser.CANCEL_REVIEW) {
             oldEvent.setState(State.CANCELLED);
-            return EventMapper.toEventFullDto(oldEvent, 0L, 0L);
+            return EventMapper.toEventFullDto(eventRepository.save(oldEvent), 0L, 0L);
         }
 
         oldEvent.setAnnotation(updateEvent.getAnnotation());
@@ -378,21 +370,9 @@ public class EventServiceImpl implements EventService {
     }
 
     //NON-BUSINESS
-    private List<Request> getRequestsFilterByUserIds(List<Long> users) {
-        return (users == null || users.isEmpty()) ? requestRepository.findAll()
-                : requestRepository.findByRequesterIdIn(users);
-    }
-
     private List<Event> getDistinctEvents(List<Long> users) {
         return (users == null || users.isEmpty()) ? eventRepository.findAll()
                 : eventRepository.findAllByInitiatorIdIn(users);
-    }
-
-    private List<Event> getDistinctEventsFromRequests(List<Request> allRequests) {
-        return allRequests.stream()
-                .map(Request::getEvent)
-                .distinct()
-                .collect(Collectors.toList());
     }
 
     private List<Event> getEventsFilterByStates(List<State> states, List<Event> distinctEvents) {
