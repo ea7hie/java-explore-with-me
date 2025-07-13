@@ -12,6 +12,7 @@ import ru.yandex.practicum.event.model.Sort;
 import ru.yandex.practicum.event.service.EventService;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -20,13 +21,14 @@ import java.util.List;
 @RequestMapping("/events")
 public class EventPublicController {
     private final EventService eventService;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @GetMapping
     public List<EventShortDto> findEventsByText(@RequestParam(defaultValue = "") String text,
                                                 @RequestParam(required = false) List<Long> categories,
                                                 @RequestParam(defaultValue = "false") boolean paid,
-                                                @RequestParam(required = false) LocalDateTime rangeStart,
-                                                @RequestParam(required = false) LocalDateTime rangeEnd,
+                                                @RequestParam(required = false) String rangeStart,
+                                                @RequestParam(required = false) String rangeEnd,
                                                 @RequestParam(defaultValue = "false") boolean onlyAvailable,
                                                 @RequestParam(defaultValue = "Sort.EVENT_DATE") Sort sort,
                                                 @PositiveOrZero @RequestParam(defaultValue = "0") int from,
@@ -36,8 +38,11 @@ public class EventPublicController {
         String uri = request.getRequestURI();
         log.info("search by text {}. client ip: {}", text, ip);
         log.info("search by text {}. endpoint path: {}", text, uri);
-        return eventService.findEventsByText(text, categories, paid, rangeStart, rangeEnd, onlyAvailable,
-                sort, from, size, ip, uri);
+
+        LocalDateTime start = (rangeStart == null) ? null : LocalDateTime.parse(rangeStart, formatter);
+        LocalDateTime end = (rangeEnd == null) ? null : LocalDateTime.parse(rangeEnd, formatter);
+        return eventService.findEventsByText(text, categories, paid, start, end,
+                onlyAvailable, sort, from, size, ip, uri);
     }
 
     @GetMapping("/{eventId}")

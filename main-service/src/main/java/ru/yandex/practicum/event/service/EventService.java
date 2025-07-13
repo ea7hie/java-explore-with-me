@@ -7,6 +7,9 @@ import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
 import ru.yandex.practicum.event.dto.in.UpdateEventUserRequest;
 import ru.yandex.practicum.event.model.Sort;
 import ru.yandex.practicum.event.model.State;
+import ru.yandex.practicum.request.dto.EventRequestStatusUpdateRequest;
+import ru.yandex.practicum.request.dto.EventRequestStatusUpdateResult;
+import ru.yandex.practicum.request.dto.ParticipationRequestDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,4 +37,9 @@ public interface EventService {
     EventFullDto findEventByInitiatorIdAndEventId(long userId, long eventId);
 
     EventFullDto updateEventsByInitiatorIdAndEventId(long userId, long eventId, UpdateEventUserRequest updateEvent);
+
+    List<ParticipationRequestDto> getListRequestsToEvent(long userId, long eventId);
+
+    EventRequestStatusUpdateResult changeStatusRequestToEvent(long userId, long eventId,
+                                                              EventRequestStatusUpdateRequest dto);
 }

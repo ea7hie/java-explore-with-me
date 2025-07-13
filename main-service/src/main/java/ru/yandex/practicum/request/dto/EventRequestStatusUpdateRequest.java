@@ -1,4 +1,4 @@
-package ru.yandex.practicum.event.dto.in;
+package ru.yandex.practicum.request.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;

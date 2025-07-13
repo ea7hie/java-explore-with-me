@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
-    List<Request> findByRequesterIdInAndStatus(List<Long> requesterIds, Status status);
-
-    List<Request> findAllByStatus(Status status);
+    List<Request> findByRequesterIdIn(List<Long> requesterIds);
 
     @Query("SELECT COUNT(DISTINCT r.requester.id)" +
             "FROM Request r " +
@@ -23,4 +21,6 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     Optional<Request> findByRequesterIdAndEventId(long requesterId, long eventId);
 
     List<Request> findAllByRequesterId(long requesterId);
+
+    List<Request> findAllByEventId(long eventId);
 }

@@ -12,7 +12,7 @@ import ru.yandex.practicum.category.service.CategoryService;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/admin/category")
+@RequestMapping("/admin/categories")
 public class CategoryAdminController {
     private final CategoryService categoryService;
 

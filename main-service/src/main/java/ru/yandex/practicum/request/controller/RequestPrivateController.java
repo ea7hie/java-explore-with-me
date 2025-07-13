@@ -13,11 +13,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/users")
+@RequestMapping("/users/{userId}/requests")
 public class RequestPrivateController {
     private final RequestService requestService;
 
-    @PostMapping("/{userId}/requests")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto addRequest(@PathVariable @Positive long userId,
                                               @RequestParam @Positive long eventId) {
@@ -25,13 +25,13 @@ public class RequestPrivateController {
         return requestService.makeRequest(userId, eventId);
     }
 
-    @GetMapping("/{userId}/requests")
+    @GetMapping
     public List<ParticipationRequestDto> addRequest(@PathVariable @Positive long userId) {
         log.info("user with id={} get all own requests", userId);
         return requestService.getOwnRequests(userId);
     }
 
-    @PatchMapping("/{userId}/requests/{requestId}/cancel")
+    @PatchMapping("/{requestId}/cancel")
     public ParticipationRequestDto deleteRequest(@PathVariable @Positive long userId,
                                                  @PathVariable @Positive long requestId) {
         log.info("user with id={} delete request with id={}", userId, requestId);

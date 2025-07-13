@@ -30,6 +30,7 @@ public class RequestServiceImpl implements RequestService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public ParticipationRequestDto makeRequest(long userId, long eventId) {
         User requester = getUserOrThrow(userId);
 
@@ -74,6 +75,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional
     public ParticipationRequestDto deleteRequest(long userId, long requestId) {
         User requester = getUserOrThrow(userId);
         Optional<Request> opt = requestRepository.findById(requestId);

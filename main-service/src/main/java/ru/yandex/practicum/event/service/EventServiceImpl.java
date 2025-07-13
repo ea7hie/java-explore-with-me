@@ -22,6 +22,10 @@ import ru.yandex.practicum.location.LocationDto;
 import ru.yandex.practicum.location.LocationMapper;
 import ru.yandex.practicum.location.LocationRepository;
 import ru.yandex.practicum.request.dao.RequestRepository;
+import ru.yandex.practicum.request.dto.EventRequestStatusUpdateRequest;
+import ru.yandex.practicum.request.dto.EventRequestStatusUpdateResult;
+import ru.yandex.practicum.request.dto.ParticipationRequestDto;
+import ru.yandex.practicum.request.dto.mapper.RequestMapper;
 import ru.yandex.practicum.request.model.Request;
 import ru.yandex.practicum.request.model.Status;
 import ru.yandex.practicum.user.dao.UserRepository;
@@ -51,28 +55,56 @@ public class EventServiceImpl implements EventService {
                                          LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                          int from, int size) {
 
-        List<Request> allRequests = getRequestsFilterByUserIds(users);
-        List<Event> distinctEvents = getDistinctEventsFromRequests(allRequests);
+        /*List<Request> allRequests = getRequestsFilterByUserIds(users);
+        if (allRequests.isEmpty()) {
+            return List.of();
+        }
+
+        List<Event> distinctEvents = getDistinctEventsFromRequests(allRequests);*/
+
+        List<Event> distinctEvents = getDistinctEvents(users);
+        if (distinctEvents.isEmpty()) {
+            return List.of();
+        }
+
         distinctEvents = getEventsFilterByStates(states, distinctEvents);
+        if (distinctEvents.isEmpty()) {
+            return List.of();
+        }
+
         distinctEvents = getEventsFilterByCategories(categories, distinctEvents);
+        if (distinctEvents.isEmpty()) {
+            return List.of();
+        }
+
         distinctEvents = getEventsFilterByRangeStart(rangeStart, distinctEvents);
-        distinctEvents = getEventsFilterByRangeEnd(rangeEnd, distinctEvents);
+        if (distinctEvents.isEmpty()) {
+            return List.of();
+        }
+
+        distinctEvents = getEventsFilterByRangeEnd(rangeEnd, distinctEvents);if (distinctEvents.isEmpty()) {
+            return List.of();
+        }
+
         distinctEvents = getEventsInAmount(distinctEvents, from, size);
+        if (distinctEvents.isEmpty()) {
+            return List.of();
+        }
 
         Map<Long, Long> eventsView = statsService.getEventsView(distinctEvents);
 
         return distinctEvents.stream()
                 .map(event -> EventMapper.toEventFullDto(event,
                         getConfirmedRequests(event),
-                        eventsView.get(event.getId())))
+                        (eventsView.get(event.getId()) == null || eventsView.isEmpty()) ? 0L
+                                : eventsView.get(event.getId())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
-        Event oldEventForUpdate = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+        Event oldEventForUpdate = getEventOrThrow(eventId);
 
         if (LocalDateTime.now().plusHours(1).isBefore(oldEventForUpdate.getEventDate())) {
             throw new OperationNotAllowedException(
@@ -189,8 +221,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto getEvent(long eventId, String ip, String uri) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+        Event event = getEventOrThrow(eventId);
         if (event.getState() != State.PUBLISHED) {
             throw new NotFoundException(String.format("Event with id=%d was not found", eventId));
         }
@@ -205,25 +236,29 @@ public class EventServiceImpl implements EventService {
     //PRIVATE
     @Override
     public List<EventShortDto> findEventsByInitiatorId(long userId, int from, int size) {
+        getUserOrThrow(userId);
         List<Event> events = eventRepository.findAllByInitiatorId(userId).stream()
                 .skip(from)
                 .limit(size)
                 .collect(Collectors.toList());
+
+        if (events.isEmpty()) {
+            return List.of();
+        }
 
         Map<Long, Long> eventsView = statsService.getEventsView(events);
 
         return events.stream()
                 .map(event -> EventMapper.toEventShortDto(event,
                         getConfirmedRequests(event),
-                        eventsView.get(event.getId())))
+                        eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public EventFullDto create(long userId, NewEventDto newEventDto) {
-        User initiator = userRepository.findById(userId).orElseThrow(() ->
-                new NotFoundException(String.format("User with id=%d was not found", userId)));
+        User initiator = getUserOrThrow(userId);
 
         if (LocalDateTime.now().plusHours(2).isAfter(newEventDto.getEventDate())) {
             throw new OperationNotAllowedException("должно содержать дату, которая еще не наступила");
@@ -299,10 +334,58 @@ public class EventServiceImpl implements EventService {
         return EventMapper.toEventFullDto(oldEvent, 0L, 0L);
     }
 
+    @Override
+    public List<ParticipationRequestDto> getListRequestsToEvent(long userId, long eventId) {
+        User user = getUserOrThrow(userId);
+        Event event = getEventOrThrow(eventId);
+        if (event.getInitiator().getId() != userId) {
+            throw new OperationNotAllowedException("For initiators only.");
+        }
+
+        return requestRepository.findAllByEventId(eventId).stream()
+                .map(RequestMapper::toParticipationRequestDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public EventRequestStatusUpdateResult changeStatusRequestToEvent(long userId, long eventId,
+                                                                     EventRequestStatusUpdateRequest dto) {
+        User user = getUserOrThrow(userId);
+        Event event = getEventOrThrow(eventId);
+        if (event.getInitiator().getId() != userId) {
+            throw new OperationNotAllowedException("For initiators only.");
+        }
+
+        List<Request> requests = requestRepository.findAllById(dto.getRequestIds()).stream()
+                .peek(request -> request.setStatus(dto.getStatus()))
+                .collect(Collectors.toList());
+
+        requestRepository.saveAll(requests);
+
+        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
+        requestRepository.findAllByEventId(eventId).stream()
+                .peek(request -> {
+                    if (request.getStatus() == Status.CONFIRMED) {
+                        result.getConfirmedRequests().add(RequestMapper.toParticipationRequestDto(request));
+                    } else if (request.getStatus() == Status.REJECTED) {
+                        result.getRejectedRequests().add(RequestMapper.toParticipationRequestDto(request));
+                    }
+                })
+                .toList();
+
+        return result;
+    }
+
     //NON-BUSINESS
     private List<Request> getRequestsFilterByUserIds(List<Long> users) {
-        return users.isEmpty() ? requestRepository.findAllByStatus(Status.CONFIRMED)
-                : requestRepository.findByRequesterIdInAndStatus(users, Status.CONFIRMED);
+        return (users == null || users.isEmpty()) ? requestRepository.findAll()
+                : requestRepository.findByRequesterIdIn(users);
+    }
+
+    private List<Event> getDistinctEvents(List<Long> users) {
+        return (users == null || users.isEmpty()) ? eventRepository.findAll()
+                : eventRepository.findAllByInitiatorIdIn(users);
     }
 
     private List<Event> getDistinctEventsFromRequests(List<Request> allRequests) {
@@ -313,14 +396,14 @@ public class EventServiceImpl implements EventService {
     }
 
     private List<Event> getEventsFilterByStates(List<State> states, List<Event> distinctEvents) {
-        return states.isEmpty() ? distinctEvents
+        return (states == null || states.isEmpty()) ? distinctEvents
                 : distinctEvents.stream()
                 .filter(event -> states.contains(event.getState()))
                 .collect(Collectors.toList());
     }
 
     private List<Event> getEventsFilterByCategories(List<Long> categories, List<Event> distinctEvents) {
-        if (categories.isEmpty()) {
+        if (categories == null || categories.isEmpty()) {
             return distinctEvents;
         }
 
@@ -406,5 +489,15 @@ public class EventServiceImpl implements EventService {
     private Location saveNewLocationOrGetAddedBefore(LocationDto newLocationDto) {
         Optional<Location> opt = locationRepository.findByLatAndLon(newLocationDto.getLat(), newLocationDto.getLon());
         return opt.orElseGet(() -> locationRepository.save(LocationMapper.toLocation(newLocationDto, -1L)));
+    }
+
+    private Event getEventOrThrow(long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
+    }
+
+    private User getUserOrThrow(long userId) {
+        return userRepository.findById(userId).orElseThrow(() ->
+                new NotFoundException(String.format("User with id=%d was not found", userId)));
     }
 }
