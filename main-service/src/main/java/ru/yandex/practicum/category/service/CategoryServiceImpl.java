@@ -25,6 +25,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final EventRepository eventRepository;
 
     @Override
+    @Transactional
     public CategoryDto add(CategoryDtoPost newCategory) {
         checkCategoryNameExists(newCategory.getName());
         Category category = categoryRepository.save(CategoryMapper.toCategory(newCategory));
@@ -48,6 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryDto update(Long id, CategoryDtoPost newCategory) {
         Category existingCategory = getCategoryOrThrow(id);
 
@@ -64,6 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         Category category = getCategoryOrThrow(id);
 

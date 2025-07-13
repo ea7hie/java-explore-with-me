@@ -1,7 +1,6 @@
 package ru.yandex.practicum.event.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.category.dao.CategoryRepository;
@@ -37,7 +36,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 @Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
@@ -71,6 +69,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         Event oldEventForUpdate = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
@@ -221,6 +220,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventFullDto create(long userId, NewEventDto newEventDto) {
         User initiator = userRepository.findById(userId).orElseThrow(() ->
                 new NotFoundException(String.format("User with id=%d was not found", userId)));
@@ -244,7 +244,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto findEventByInitiatorIdAndEventId(long userId, long eventId) {
-        Event event = eventRepository.findByInitiatorIdAndEventId(userId, eventId).orElseThrow(() -> new NotFoundException(
+        Event event = eventRepository.findByInitiatorIdAndId(userId, eventId).orElseThrow(() -> new NotFoundException(
                 String.format("Event with id=%d from initiator with id=%d was not found", eventId, userId)));
 
         return EventMapper.toEventFullDto(event,
@@ -253,6 +253,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventFullDto updateEventsByInitiatorIdAndEventId(long userId, long eventId, UpdateEventUserRequest updateEvent) {
         Event oldEvent = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException(
                 String.format("Event with id=%d from initiator with id=%d was not found", eventId, userId)));

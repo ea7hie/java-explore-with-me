@@ -7,6 +7,7 @@ import ru.yandex.practicum.request.model.Request;
 import ru.yandex.practicum.request.model.Status;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
     List<Request> findByRequesterIdInAndStatus(List<Long> requesterIds, Status status);
@@ -18,4 +19,8 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             "WHERE r.event.id = :eventId " +
             "AND r.status = :status")
     long getConfirmedRequests(@Param("eventId") long eventId, @Param("status") Status status);
+
+    Optional<Request> findByRequesterIdAndEventId(long requesterId, long eventId);
+
+    List<Request> findAllByRequesterId(long requesterId);
 }
