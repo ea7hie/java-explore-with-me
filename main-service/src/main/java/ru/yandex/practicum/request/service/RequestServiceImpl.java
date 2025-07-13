@@ -6,8 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.event.model.Event;
 import ru.yandex.practicum.event.model.State;
+import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
-import ru.yandex.practicum.exception.OperationNotAllowedException;
 import ru.yandex.practicum.request.dao.RequestRepository;
 import ru.yandex.practicum.request.dto.ParticipationRequestDto;
 import ru.yandex.practicum.request.dto.mapper.RequestMapper;
@@ -38,21 +38,21 @@ public class RequestServiceImpl implements RequestService {
                 .orElseThrow(() -> new NotFoundException(String.format("Event with id=%d was not found", eventId)));
 
         if (event.getInitiator().getId() == userId) {
-            throw new OperationNotAllowedException("Initiator cannot send request to own event");
+            throw new ConflictException("Initiator cannot send request to own event");
         }
 
         if (event.getState() != State.PUBLISHED) {
-            throw new OperationNotAllowedException("This event have not been published yet");
+            throw new ConflictException("This event have not been published yet");
         }
 
         Optional<Request> optionalRequest = requestRepository.findByRequesterIdAndEventId(userId, eventId);
         if (optionalRequest.isPresent()) {
-            throw new OperationNotAllowedException("Request have been already send");
+            throw new ConflictException("Request have been already send");
         }
 
         long confirmedRequests = requestRepository.getConfirmedRequests(eventId, Status.CONFIRMED);
         if (confirmedRequests >= event.getParticipantLimit()) {
-            throw new OperationNotAllowedException("Cannot send request because limit has been reached");
+            throw new ConflictException("Cannot send request because limit has been reached");
         }
 
         Request request = new Request();

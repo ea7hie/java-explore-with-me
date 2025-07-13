@@ -35,7 +35,7 @@ public class CategoryAdminControllerTest {
 
         when(categoryService.add(any())).thenReturn(expectedResponse);
 
-        mockMvc.perform(post("/admin/category")
+        mockMvc.perform(post("/admin/categories")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(categoryPost)))
                 .andExpect(status().isCreated())
@@ -48,7 +48,7 @@ public class CategoryAdminControllerTest {
     void createCategory_InvalidName_Returns400() throws Exception {
         CategoryDtoPost invalidCategory = new CategoryDtoPost("");
 
-        mockMvc.perform(post("/admin/category")
+        mockMvc.perform(post("/admin/categories")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidCategory)))
                 .andExpect(status().isBadRequest());
@@ -64,7 +64,7 @@ public class CategoryAdminControllerTest {
 
         when(categoryService.update(existingCategoryId, updateData)).thenReturn(expectedResult);
 
-        mockMvc.perform(patch("/admin/category/{id}", existingCategoryId)
+        mockMvc.perform(patch("/admin/categories/{id}", existingCategoryId)
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateData)))
                 .andExpect(status().isOk())
@@ -77,7 +77,7 @@ public class CategoryAdminControllerTest {
     void deleteCategory_ExistingCategory_ReturnsNoContent() throws Exception {
         Long categoryIdToDelete = 1L;
 
-        mockMvc.perform(delete("/admin/category/{id}", categoryIdToDelete))
+        mockMvc.perform(delete("/admin/categories/{id}", categoryIdToDelete))
                 .andExpect(status().isNoContent());
 
         verify(categoryService).delete(categoryIdToDelete);
@@ -88,13 +88,13 @@ public class CategoryAdminControllerTest {
         Long nonExistingId = 999L;
         doThrow(new NotFoundException("Category not found")).when(categoryService).delete(nonExistingId);
 
-        mockMvc.perform(delete("/admin/category/{id}", nonExistingId))
+        mockMvc.perform(delete("/admin/categories/{id}", nonExistingId))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void updateCategory_InvalidCategoryData_Returns400() throws Exception {
-        mockMvc.perform(patch("/admin/category/5")
+        mockMvc.perform(patch("/admin/categories/5")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CategoryDtoPost(""))))
                 .andExpect(status().isBadRequest());

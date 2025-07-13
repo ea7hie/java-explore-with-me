@@ -15,8 +15,8 @@ import ru.yandex.practicum.event.dto.in.UpdateEventAdminRequest;
 import ru.yandex.practicum.event.dto.in.UpdateEventUserRequest;
 import ru.yandex.practicum.event.dto.mapper.EventMapper;
 import ru.yandex.practicum.event.model.*;
+import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
-import ru.yandex.practicum.exception.OperationNotAllowedException;
 import ru.yandex.practicum.location.Location;
 import ru.yandex.practicum.location.LocationDto;
 import ru.yandex.practicum.location.LocationMapper;
@@ -74,7 +74,8 @@ public class EventServiceImpl implements EventService {
             return List.of();
         }
 
-        distinctEvents = getEventsFilterByRangeEnd(rangeEnd, distinctEvents);if (distinctEvents.isEmpty()) {
+        distinctEvents = getEventsFilterByRangeEnd(rangeEnd, distinctEvents);
+        if (distinctEvents.isEmpty()) {
             return List.of();
         }
 
@@ -99,12 +100,17 @@ public class EventServiceImpl implements EventService {
         Event oldEventForUpdate = getEventOrThrow(eventId);
 
         if (LocalDateTime.now().plusHours(1).isAfter(oldEventForUpdate.getEventDate())) {
-            throw new OperationNotAllowedException(
+            throw new ConflictException(
                     "Cannot publish the event because it's eventDate is less than an hour away");
         }
 
+        if (oldEventForUpdate.getState() == State.PUBLISHED
+                && updateEventAdminRequest.getStateAction() == StateActionForAdmin.REJECT_EVENT) {
+            throw new ConflictException("Cannot reject the event because it's already published.");
+        }
+
         if (oldEventForUpdate.getState() != State.PENDING) {
-            throw new OperationNotAllowedException(
+            throw new ConflictException(
                     "Cannot publish the event because it's not in the right state: " + oldEventForUpdate.getState());
         }
 
@@ -253,7 +259,7 @@ public class EventServiceImpl implements EventService {
         User initiator = getUserOrThrow(userId);
 
         if (LocalDateTime.now().plusHours(2).isAfter(newEventDto.getEventDate())) {
-            throw new OperationNotAllowedException("должно содержать дату, которая еще не наступила");
+            throw new ConflictException("должно содержать дату, которая еще не наступила");
         }
 
         LocationDto newLocationDto = newEventDto.getLocation();
@@ -286,11 +292,11 @@ public class EventServiceImpl implements EventService {
                 String.format("Event with id=%d from initiator with id=%d was not found", eventId, userId)));
 
         if (oldEvent.getState() == State.PUBLISHED) {
-            throw new OperationNotAllowedException("Only pending or canceled events can be changed");
+            throw new ConflictException("Only pending or canceled events can be changed");
         }
 
         if (LocalDateTime.now().plusHours(2).isAfter(oldEvent.getEventDate())) {
-            throw new OperationNotAllowedException(
+            throw new ConflictException(
                     "Cannot update the event because it's eventDate is less than an hour away");
         }
 
@@ -331,7 +337,7 @@ public class EventServiceImpl implements EventService {
         User user = getUserOrThrow(userId);
         Event event = getEventOrThrow(eventId);
         if (event.getInitiator().getId() != userId) {
-            throw new OperationNotAllowedException("For initiators only.");
+            throw new ConflictException("For initiators only.");
         }
 
         return requestRepository.findAllByEventId(eventId).stream()
@@ -346,7 +352,7 @@ public class EventServiceImpl implements EventService {
         User user = getUserOrThrow(userId);
         Event event = getEventOrThrow(eventId);
         if (event.getInitiator().getId() != userId) {
-            throw new OperationNotAllowedException("For initiators only.");
+            throw new ConflictException("For initiators only.");
         }
 
         List<Request> requests = requestRepository.findAllById(dto.getRequestIds()).stream()
@@ -449,7 +455,7 @@ public class EventServiceImpl implements EventService {
     private Event getEventWithUpdatedState(StateActionForAdmin stateActionForAdmin, Event eventForUpdate) {
         if (stateActionForAdmin == StateActionForAdmin.REJECT_EVENT) {
             if (eventForUpdate.getState() == State.PUBLISHED) {
-                throw new OperationNotAllowedException(
+                throw new ConflictException(
                         "Cannot publish the event because it's not in the right state: PUBLISHED");
             }
 
