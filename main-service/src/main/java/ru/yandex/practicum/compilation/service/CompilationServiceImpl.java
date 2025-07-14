@@ -19,6 +19,7 @@ import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.request.dao.RequestRepository;
 import ru.yandex.practicum.request.model.Status;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -104,6 +105,62 @@ public class CompilationServiceImpl implements CompilationService {
                 new NotFoundException(String.format("Compilation with id=%d was not found", compId))
         );
         compilationRepository.delete(compilation);
+    }
+
+    @Override
+    public List<CompilationDto> findCompilations(Boolean pinned, int from, int size) {
+        List<Compilation> allCompilations = (pinned == null) ? compilationRepository.findAll()
+                : compilationRepository.findAllByPinnedIs(pinned);
+
+        List<Event> finalAllEvents = new ArrayList<>();
+        List<Compilation> result = allCompilations.stream()
+                .skip(from)
+                .limit(size)
+                .peek(comp -> {
+                    eventRepository.findAllById(comp.getEvents().stream()
+                                    .map(Event::getId)
+                                    .toList()).stream()
+                            .peek(finalAllEvents::add)
+                            .close();
+                })
+                .toList();
+
+        List<Event> distinctEvents = finalAllEvents.stream().distinct().collect(Collectors.toList());
+        Map<Long, Long> eventsView = statsService.getEventsView(distinctEvents);
+
+        List<EventFullDto> eventFullDtos = distinctEvents.stream()
+                .map(event -> EventMapper.toEventFullDto(event,
+                        getConfirmedRequests(event),
+                        (eventsView.get(event.getId()) == null || eventsView.isEmpty()) ? 0L
+                                : eventsView.get(event.getId())))
+                .toList();
+
+        return result.stream()
+                .map(comp -> {
+                    List<Long> idsOfEventsForOneComp = comp.getEvents().stream().map(Event::getId).toList();
+                    List<EventFullDto> toOneComp = eventFullDtos.stream()
+                            .filter(eventFullDto -> idsOfEventsForOneComp.contains(eventFullDto.getId()))
+                            .toList();
+
+                    return CompilationMapper.toCompilationDto(comp, toOneComp);
+                })
+                .toList();
+    }
+
+    @Override
+    public CompilationDto getCompilationById(long compId) {
+        Compilation compilation = compilationRepository.findById(compId).orElseThrow(() ->
+                new NotFoundException(String.format("Compilation with id=%d was not found", compId))
+        );
+
+        Map<Long, Long> eventsView = statsService.getEventsView(compilation.getEvents());
+        List<EventFullDto> eventFullDtos = compilation.getEvents().stream()
+                .map(event -> EventMapper.toEventFullDto(event,
+                        getConfirmedRequests(event),
+                        eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
+                .toList();
+
+        return CompilationMapper.toCompilationDto(compilation, eventFullDtos);
     }
 
     private long getConfirmedRequests(Event event) {
