@@ -184,9 +184,7 @@ public class EventServiceImpl implements EventService {
 
         Map<Event, Long> amountConfirmedRequests = new HashMap<>();
         foundedEvents = foundedEvents.stream()
-                .peek(event -> {
-                    amountConfirmedRequests.put(event, getConfirmedRequests(event));
-                })
+                .peek(event -> amountConfirmedRequests.put(event, getConfirmedRequests(event)))
                 .collect(Collectors.toList());
 
         if (onlyAvailable) {
@@ -458,7 +456,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private LocalDateTime getNewEventDateForUpdatingEvent(LocalDateTime oldEventDate, LocalDateTime newEventDate) {
-        return (oldEventDate.isEqual(newEventDate) || newEventDate == null
+        return (newEventDate == null || oldEventDate.isEqual(newEventDate)
                 || LocalDateTime.now().minusHours(2).isAfter(newEventDate)) ? oldEventDate : newEventDate;
     }
 
