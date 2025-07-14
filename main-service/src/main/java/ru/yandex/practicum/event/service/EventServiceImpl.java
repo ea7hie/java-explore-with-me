@@ -113,11 +113,13 @@ public class EventServiceImpl implements EventService {
 
         oldEventForUpdate = getEventWithUpdatedState(updateEventAdminRequest.getStateAction(), oldEventForUpdate);
 
-        oldEventForUpdate.setAnnotation(updateEventAdminRequest.getAnnotation());
+        oldEventForUpdate.setAnnotation(getNewStringValueForUpdatingEvent(
+                oldEventForUpdate.getAnnotation(), updateEventAdminRequest.getAnnotation()));
         oldEventForUpdate.setCategory(
                 getNewCategoryForUpdatingEvent(oldEventForUpdate.getCategory(), updateEventAdminRequest.getCategory())
         );
-        oldEventForUpdate.setDescription(updateEventAdminRequest.getDescription());
+        oldEventForUpdate.setDescription(getNewStringValueForUpdatingEvent(
+                oldEventForUpdate.getDescription(), updateEventAdminRequest.getDescription()));
         oldEventForUpdate.setEventDate(
                 getNewEventDateForUpdatingEvent(oldEventForUpdate.getEventDate(), updateEventAdminRequest.getEventDate())
         );
@@ -133,7 +135,8 @@ public class EventServiceImpl implements EventService {
         oldEventForUpdate.setRequestModeration(getNewRequestModerationForUpdatingEvent(
                 oldEventForUpdate.getRequestModeration(), updateEventAdminRequest.getRequestModeration())
         );
-        oldEventForUpdate.setTitle(updateEventAdminRequest.getTitle());
+        oldEventForUpdate.setTitle(getNewStringValueForUpdatingEvent(
+                oldEventForUpdate.getTitle(), updateEventAdminRequest.getTitle()));
 
         oldEventForUpdate = eventRepository.save(oldEventForUpdate);
 
@@ -172,7 +175,6 @@ public class EventServiceImpl implements EventService {
                     .filter(event -> event.getPaid() == paid)
                     .collect(Collectors.toList());
         }
-
 
 
         foundedEvents = getEventsFilterByCategories(categories, foundedEvents);
@@ -308,27 +310,19 @@ public class EventServiceImpl implements EventService {
             return EventMapper.toEventFullDto(eventRepository.save(oldEvent), 0L, 0L);
         }
 
-        oldEvent.setAnnotation(updateEvent.getAnnotation());
-        oldEvent.setCategory(
-                getNewCategoryForUpdatingEvent(oldEvent.getCategory(), updateEvent.getCategory())
-        );
-        oldEvent.setDescription(updateEvent.getDescription());
-        oldEvent.setEventDate(
-                getNewEventDateForUpdatingEvent(oldEvent.getEventDate(), updateEvent.getEventDate())
-        );
-        oldEvent.setLocation(getNewLocationForUpdatingEvent(
-                oldEvent.getLocation(), updateEvent.getLocation())
-        );
-        oldEvent.setPaid(
-                getNewPaidForUpdatingEvent(oldEvent.getPaid(), updateEvent.getPaid())
-        );
+        oldEvent.setAnnotation(getNewStringValueForUpdatingEvent(oldEvent.getAnnotation(), updateEvent.getAnnotation()));
+        oldEvent.setCategory(getNewCategoryForUpdatingEvent(oldEvent.getCategory(), updateEvent.getCategory()));
+        oldEvent.setDescription(getNewStringValueForUpdatingEvent(oldEvent.getDescription(), updateEvent.getDescription()));
+        oldEvent.setEventDate(getNewEventDateForUpdatingEvent(oldEvent.getEventDate(), updateEvent.getEventDate()));
+        oldEvent.setLocation(getNewLocationForUpdatingEvent(oldEvent.getLocation(), updateEvent.getLocation()));
+        oldEvent.setPaid(getNewPaidForUpdatingEvent(oldEvent.getPaid(), updateEvent.getPaid()));
         oldEvent.setParticipantLimit(getNewParticipantLimitForUpdatingEvent(
                 oldEvent.getParticipantLimit(), updateEvent.getParticipantLimit())
         );
         oldEvent.setRequestModeration(getNewRequestModerationForUpdatingEvent(
                 oldEvent.getRequestModeration(), updateEvent.getRequestModeration())
         );
-        oldEvent.setTitle(updateEvent.getTitle());
+        oldEvent.setTitle(getNewStringValueForUpdatingEvent(oldEvent.getTitle(), updateEvent.getTitle()));
 
         oldEvent = eventRepository.save(oldEvent);
 
@@ -445,6 +439,11 @@ public class EventServiceImpl implements EventService {
                 .skip(from)
                 .limit(size)
                 .collect(Collectors.toList());
+    }
+
+    private String getNewStringValueForUpdatingEvent(String oldValue, String newValue) {
+        return (newValue == null || newValue.isBlank() || newValue.isEmpty() || oldValue.equals(newValue)) ? oldValue
+                : newValue;
     }
 
     private Category getNewCategoryForUpdatingEvent(Category oldCategory, long newCategory) {
