@@ -52,7 +52,7 @@ public class StatsService {
                 Long eventId = Long.parseLong(parts[2]);
                 views.put(eventId, (statDto.getHits() == null) ? 0L : statDto.getHits());
             }
-        }); 
+        });
 
         return views;
     }
