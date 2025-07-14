@@ -117,11 +117,10 @@ public class CompilationServiceImpl implements CompilationService {
                 .skip(from)
                 .limit(size)
                 .peek(comp -> {
-                    eventRepository.findAllById(comp.getEvents().stream()
-                                    .map(Event::getId)
-                                    .toList()).stream()
-                            .peek(finalAllEvents::add)
-                            .close();
+                    List<Event> events = eventRepository.findAllById(comp.getEvents().stream()
+                            .map(Event::getId)
+                            .toList());
+                    finalAllEvents.addAll(events);
                 })
                 .toList();
 
