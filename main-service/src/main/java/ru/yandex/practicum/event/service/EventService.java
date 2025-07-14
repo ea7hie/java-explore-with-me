@@ -21,11 +21,9 @@ public interface EventService {
 
     EventFullDto updateEvent(long eventId, UpdateEventAdminRequest updateEventAdminRequest);
 
-    List<EventShortDto> findEventsByText(String text,
-                                         List<Long> categories, boolean paid,
+        List<EventShortDto> findEventsByText(String text, List<Long> categories, Boolean paid,
                                          LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                         boolean onlyAvailable,
-                                         Sort sort, int from, int size,
+                                         boolean onlyAvailable, Sort sort, int from, int size,
                                          String ip, String uri);
 
     EventFullDto getEvent(long eventId, String ip, String uri);

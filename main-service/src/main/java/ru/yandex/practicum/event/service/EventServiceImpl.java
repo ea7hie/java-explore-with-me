@@ -32,10 +32,7 @@ import ru.yandex.practicum.user.dao.UserRepository;
 import ru.yandex.practicum.user.model.User;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -148,7 +145,7 @@ public class EventServiceImpl implements EventService {
 
     //PUBLIC
     @Override
-    public List<EventShortDto> findEventsByText(String text, List<Long> categories, boolean paid,
+    public List<EventShortDto> findEventsByText(String text, List<Long> categories, Boolean paid,
                                                 LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                 boolean onlyAvailable, Sort sort, int from, int size,
                                                 String ip, String uri) {
@@ -165,10 +162,18 @@ public class EventServiceImpl implements EventService {
                     .collect(Collectors.toList());
         }
 
-        foundedEvents = foundedEvents.stream()
-                .distinct()
-                .filter(event -> event.getPaid() == paid)
-                .collect(Collectors.toList());
+        if (paid == null) {
+            foundedEvents = foundedEvents.stream()
+                    .distinct()
+                    .collect(Collectors.toList());
+        } else {
+            foundedEvents = foundedEvents.stream()
+                    .distinct()
+                    .filter(event -> event.getPaid() == paid)
+                    .collect(Collectors.toList());
+        }
+
+
 
         foundedEvents = getEventsFilterByCategories(categories, foundedEvents);
 
@@ -355,9 +360,34 @@ public class EventServiceImpl implements EventService {
             throw new ConflictException("For initiators only.");
         }
 
-        List<Request> requests = requestRepository.findAllById(dto.getRequestIds()).stream()
-                .peek(request -> request.setStatus(dto.getStatus()))
-                .collect(Collectors.toList());
+        List<Request> requests = requestRepository.findAllById(dto.getRequestIds());
+        if (dto.getStatus() == Status.CONFIRMED) {
+            if (event.getParticipantLimit() == 0) {
+                long confirmedRequests = requestRepository.getConfirmedRequests(eventId, Status.CONFIRMED);
+                if (confirmedRequests + dto.getRequestIds().size() <= event.getParticipantLimit()) {
+                    requests = requests.stream()
+                            .peek(request -> request.setStatus(Status.CONFIRMED))
+                            .collect(Collectors.toList());
+                } else {
+                    long limit = event.getParticipantLimit() - confirmedRequests;
+                    List<Request> added = requests.stream()
+                            .limit(limit)
+                            .peek(request -> request.setStatus(Status.CONFIRMED))
+                            .toList();
+                    List<Request> rejected = requests.stream()
+                            .skip(limit)
+                            .peek(request -> request.setStatus(Status.REJECTED))
+                            .toList();
+
+                    requests = new ArrayList<>(added);
+                    requests.addAll(rejected);
+                }
+            }
+        } else {
+            requests = requests.stream()
+                    .peek(request -> request.setStatus(dto.getStatus()))
+                    .collect(Collectors.toList());
+        }
 
         requestRepository.saveAll(requests);
 
@@ -370,7 +400,7 @@ public class EventServiceImpl implements EventService {
                         result.getRejectedRequests().add(RequestMapper.toParticipationRequestDto(request));
                     }
                 })
-                .toList();
+                .close();
 
         return result;
     }

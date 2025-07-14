@@ -42,6 +42,16 @@ public class CompilationServiceImpl implements CompilationService {
         }
 
         List<Event> events = eventRepository.findAllById(newCompilationDto.getEvents());
+
+        if (events.size() != newCompilationDto.getEvents().size()) {
+            List<Long> foundedIds = events.stream().map(Event::getId).toList();
+            for (Long eventId : newCompilationDto.getEvents()) {
+                if (!foundedIds.contains(eventId)) {
+                    throw new NotFoundException(String.format("Event with id=%d was not found", eventId));
+                }
+            }
+        }
+
         Compilation saved = compilationRepository.save(CompilationMapper.toCompilation(newCompilationDto, events));
         Map<Long, Long> eventsView = statsService.getEventsView(events);
         List<EventFullDto> eventFullDtos = events.stream()

@@ -47,6 +47,11 @@ public class StatsClient {
 
     public List<StatisticDtoGet> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        if (start.isAfter(end)) {
+            throw new StatsClientException("End cannot be earlier then start.");
+        }
+
         try {
             log.info("Requesting statistics from client");
             return restClient

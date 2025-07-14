@@ -28,7 +28,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public List<StatisticDtoGet> getStats(String start, String end, List<String> uris, Boolean unique) {
-        LocalDateTime dtStart = LocalDateTime.parse(start, formatter);
+        LocalDateTime dtStart = LocalDateTime.parse(start, formatter).minusSeconds(2);
         LocalDateTime dtEnd = LocalDateTime.parse(end, formatter);
         List<StatisticDtoGet> statistics;
 

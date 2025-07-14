@@ -41,18 +41,19 @@ public class StatsService {
         LocalDateTime start = minPublishedOn.get();
         List<String> uri = publishedEvents.stream()
                 .map(Event::getId)
-                .map(id -> "events/" + id)
+                .map(id -> "/events/" + id)
                 .toList();
 
-        List<StatisticDtoGet> stats = statClient.getStats(start, LocalDateTime.now(), uri, true);
+        List<StatisticDtoGet> stats = statClient.getStats(start, LocalDateTime.now(), uri, false);
 
         stats.forEach(statDto -> {
             String[] parts = statDto.getUri().split("/");
             if (parts.length >= 2) {
-                Long eventId = Long.parseLong(parts[1]);
+                Long eventId = Long.parseLong(parts[2]);
                 views.put(eventId, (statDto.getHits() == null) ? 0L : statDto.getHits());
             }
-        });
+        }); 
+
         return views;
     }
 

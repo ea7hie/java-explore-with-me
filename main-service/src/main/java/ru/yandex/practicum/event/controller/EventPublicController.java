@@ -26,7 +26,7 @@ public class EventPublicController {
     @GetMapping
     public List<EventShortDto> findEventsByText(@RequestParam(defaultValue = "") String text,
                                                 @RequestParam(required = false) List<Long> categories,
-                                                @RequestParam(defaultValue = "false") boolean paid,
+                                                @RequestParam(required = false) Boolean paid,
                                                 @RequestParam(required = false) String rangeStart,
                                                 @RequestParam(required = false) String rangeEnd,
                                                 @RequestParam(defaultValue = "false") boolean onlyAvailable,
