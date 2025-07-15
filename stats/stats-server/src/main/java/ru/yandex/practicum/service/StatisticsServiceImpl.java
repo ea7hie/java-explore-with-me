@@ -12,6 +12,7 @@ import ru.yandex.practicum.model.mapper.StatisticsMapper;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -53,6 +54,6 @@ public class StatisticsServiceImpl implements StatisticsService {
                     statistics.size(), uris, start, end, unique);
         }
 
-        return statistics;
+        return statistics.stream().distinct().collect(Collectors.toList());
     }
 }

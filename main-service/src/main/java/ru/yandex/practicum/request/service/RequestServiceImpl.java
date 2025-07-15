@@ -32,8 +32,6 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto makeRequest(long userId, long eventId) {
-        LocalDateTime now = LocalDateTime.now();
-
         User requester = getUserOrThrow(userId);
 
         Event event = eventRepository.findById(eventId)
@@ -59,14 +57,10 @@ public class RequestServiceImpl implements RequestService {
             }
         }
 
-        Request request = new Request();
-        request.setEvent(event);
-        request.setRequester(requester);
-        request.setStatus((!event.getRequestModeration() || event.getParticipantLimit() == 0) ? Status.CONFIRMED
-                : Status.PENDING);
-        request.setCreated(now);
-
-        return RequestMapper.toParticipationRequestDto(requestRepository.save(request));
+        return RequestMapper.toParticipationRequestDto(requestRepository.save(new Request(-1L, event, requester,
+                (!event.getRequestModeration() || event.getParticipantLimit() == 0) ? Status.CONFIRMED
+                        : Status.PENDING,
+                LocalDateTime.now())));
     }
 
     @Override

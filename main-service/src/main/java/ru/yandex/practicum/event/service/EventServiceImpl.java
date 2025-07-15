@@ -231,7 +231,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException(String.format("Event with id=%d was not found", eventId));
         }
 
-        // statsService.sendHit(uri, ip);
+        statsService.sendHit(uri, ip);
         return EventMapper.toEventFullDto(event,
                 getConfirmedRequests(event),
                 statsService.getEventsView(List.of(event)).getOrDefault(eventId, 0L));
@@ -307,7 +307,7 @@ public class EventServiceImpl implements EventService {
         }
 
         if (updateEvent.getStateAction() == StateActionForUser.CANCEL_REVIEW) {
-            oldEvent.setState(State.CANCELLED);
+            oldEvent.setState(State.CANCELED);
             return EventMapper.toEventFullDto(eventRepository.save(oldEvent), 0L, 0L);
         }
         oldEvent.setState(State.PENDING);
@@ -370,6 +370,10 @@ public class EventServiceImpl implements EventService {
                 } else {
                     throw new ConflictException("Limit is already reached.");
                 }
+            } else {
+                requests = requests.stream()
+                        .peek(request -> request.setStatus(Status.CONFIRMED))
+                        .collect(Collectors.toList());
             }
         } else {
             requests = requests.stream()
@@ -379,18 +383,18 @@ public class EventServiceImpl implements EventService {
 
         requestRepository.saveAll(requests);
 
-        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        requestRepository.findAllByEventId(eventId).stream()
-                .peek(request -> {
-                    if (request.getStatus() == Status.CONFIRMED) {
-                        result.getConfirmedRequests().add(RequestMapper.toParticipationRequestDto(request));
-                    } else if (request.getStatus() == Status.REJECTED) {
-                        result.getRejectedRequests().add(RequestMapper.toParticipationRequestDto(request));
-                    }
-                })
-                .close();
+        List<ParticipationRequestDto> confirmed = new ArrayList<>();
+        List<ParticipationRequestDto> rejected = new ArrayList<>();
 
-        return result;
+        for (Request request : requests) {
+            if (request.getStatus() == Status.CONFIRMED) {
+                confirmed.add(RequestMapper.toParticipationRequestDto(request));
+            } else if (request.getStatus() == Status.REJECTED) {
+                rejected.add(RequestMapper.toParticipationRequestDto(request));
+            }
+        }
+
+        return new EventRequestStatusUpdateResult(confirmed, rejected);
     }
 
     //NON-BUSINESS
@@ -482,7 +486,7 @@ public class EventServiceImpl implements EventService {
                         "Cannot publish the event because it's not in the right state: PUBLISHED");
             }
 
-            eventForUpdate.setState(State.CANCELLED);
+            eventForUpdate.setState(State.CANCELED);
             return eventForUpdate;
         }
 

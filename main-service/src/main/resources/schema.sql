@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS events (
     paid BOOLEAN DEFAULT false NOT NULL,
     participant_limit INT DEFAULT 0 NOT NULL,
     published_on TIMESTAMP,
-    state VARCHAR DEFAULT 'PENDING' NOT NULL CHECK (state IN ('PENDING', 'PUBLISHED', 'CANCELLED')),
+    state VARCHAR DEFAULT 'PENDING' NOT NULL CHECK (state IN ('PENDING', 'PUBLISHED', 'CANCELED')),
     request_moderation BOOLEAN DEFAULT true NOT NULL,
     title VARCHAR(170) NOT NULL,
     initiator_id BIGINT REFERENCES users (id) NOT NULL

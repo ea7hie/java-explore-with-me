@@ -32,10 +32,10 @@ public class EventAdminController {
                                          @Positive @RequestParam(defaultValue = "10") int size) {
         LocalDateTime start = (rangeStart == null) ? null : LocalDateTime.parse(rangeStart, formatter);
         LocalDateTime end = (rangeEnd == null) ? null : LocalDateTime.parse(rangeEnd, formatter);
-        if (users.size() == 1 && users.contains(0L)) {
+        if (users == null || (users.size() == 1 && users.contains(0L))) {
             users = List.of();
         }
-        if (categories.size() == 1 && categories.contains(0L)) {
+        if (categories == null || (categories.size() == 1 && categories.contains(0L))) {
             categories = List.of();
         }
 

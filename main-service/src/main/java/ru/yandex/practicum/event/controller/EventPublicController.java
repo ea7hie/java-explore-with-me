@@ -45,7 +45,7 @@ public class EventPublicController {
         if (text.equals("0")) {
             text = "";
         }
-        if (categories.size() == 1 && categories.contains(0L)) {
+        if (categories == null || (categories.size() == 1 && categories.contains(0L))) {
             categories = List.of();
         }
         return eventService.findEventsByText(text, categories, paid, start, end,
@@ -53,7 +53,7 @@ public class EventPublicController {
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto findEventsByText(@PathVariable long eventId, HttpServletRequest request) {
+    public EventFullDto findEventsById(@PathVariable long eventId, HttpServletRequest request) {
         String ip = request.getRemoteAddr();
         String uri = request.getRequestURI();
         log.info("get event by id {}. client ip: {}", eventId, ip);
