@@ -87,8 +87,8 @@ public class EventServiceImpl implements EventService {
         return distinctEvents.stream()
                 .map(event -> EventMapper.toEventFullDto(event,
                         getConfirmedRequests(event),
-                        (eventsView.get(event.getId()) == null || eventsView.isEmpty()) ? 0L
-                                : eventsView.get(event.getId())))
+                        (eventsView.get(event.getId()) == null || eventsView.isEmpty()
+                                || eventsView.get(event.getId()) == 0L) ? 0L : eventsView.get(event.getId()) - 1))
                 .collect(Collectors.toList());
     }
 
@@ -141,7 +141,9 @@ public class EventServiceImpl implements EventService {
 
         oldEventForUpdate = eventRepository.save(oldEventForUpdate);
 
-        long views = statsService.getEventsView(List.of(oldEventForUpdate)).getOrDefault(oldEventForUpdate.getId(), 0L);
+        Map<Long, Long> eventsView = statsService.getEventsView(List.of(oldEventForUpdate));
+        long views = (eventsView.get(oldEventForUpdate.getId()) == null || eventsView.isEmpty()
+                || eventsView.get(oldEventForUpdate.getId()) == 0L) ? 0L : eventsView.get(oldEventForUpdate.getId()) - 1;
         return EventMapper.toEventFullDto(oldEventForUpdate,
                 requestRepository.getConfirmedRequests(oldEventForUpdate.getId(), Status.CONFIRMED),
                 views);
@@ -208,19 +210,21 @@ public class EventServiceImpl implements EventService {
             return foundedEvents.stream()
                     .map(event -> EventMapper.toEventShortDto(event,
                             amountConfirmedRequests.get(event),
-                            eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
+                            (eventsView.get(event.getId()) == null || eventsView.isEmpty()
+                                    || eventsView.get(event.getId()) == 0L) ? 0L : eventsView.get(event.getId()) - 1))
                     .sorted(new EventShortDtoComparatorByViews())
                     .skip(from)
                     .limit(size)
                     .collect(Collectors.toList());
         }
 
-        statsService.sendHit(uri, ip);
         eventsView = statsService.getEventsView(foundedEvents);
+        statsService.sendHit(uri, ip);
         return foundedEvents.stream()
                 .map(event -> EventMapper.toEventShortDto(event,
                         amountConfirmedRequests.get(event),
-                        eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
+                        (eventsView.get(event.getId()) == null || eventsView.isEmpty()
+                                || eventsView.get(event.getId()) == 0L) ? 0L : eventsView.get(event.getId()) - 1))
                 .collect(Collectors.toList());
     }
 
@@ -231,10 +235,13 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException(String.format("Event with id=%d was not found", eventId));
         }
 
+        Map<Long, Long> eventsView = statsService.getEventsView(List.of(event));
+        long views = (eventsView.get(event.getId()) == null || eventsView.isEmpty()
+                || eventsView.get(event.getId()) == 0L) ? 0L : eventsView.get(event.getId()) - 1;
         statsService.sendHit(uri, ip);
         return EventMapper.toEventFullDto(event,
                 getConfirmedRequests(event),
-                statsService.getEventsView(List.of(event)).getOrDefault(eventId, 0L));
+                views);
     }
 
     //PRIVATE
@@ -286,9 +293,12 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByInitiatorIdAndId(userId, eventId).orElseThrow(() -> new NotFoundException(
                 String.format("Event with id=%d from initiator with id=%d was not found", eventId, userId)));
 
+        Map<Long, Long> eventsView = statsService.getEventsView(List.of(event));
+        long views = (eventsView.get(event.getId()) == null || eventsView.isEmpty()
+                || eventsView.get(event.getId()) == 0L) ? 0L : eventsView.get(event.getId()) - 1;
         return EventMapper.toEventFullDto(event,
                 getConfirmedRequests(event),
-                statsService.getEventsView(List.of(event)).getOrDefault(event, 0L));
+                views);
     }
 
     @Override
