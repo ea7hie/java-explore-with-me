@@ -116,7 +116,7 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(Exception ex) {
-                ErrorResponse response = new ErrorResponse(
+        ErrorResponse response = new ErrorResponse(
                 "Unknown mistake.",
                 ex.getMessage(),
                 HttpStatus.BAD_REQUEST,
@@ -124,6 +124,34 @@ public class ErrorHandler {
         );
 
         log.error("Unknown mistake. {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(StatsClientException.class)
+    public ResponseEntity<ErrorResponse> handleStatsClientException(StatsClientException ex) {
+        ErrorResponse response = new ErrorResponse(
+                "Error in stats-server.",
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                LocalDateTime.now().format(dateTimeFormatter)
+        );
+
+        log.error("StatsClientException error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<ErrorResponse> handleDateTimeException(DateTimeException ex) {
+        ErrorResponse response = new ErrorResponse(
+                "Wrong value of the input date",
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                LocalDateTime.now().format(dateTimeFormatter)
+        );
+
+        log.error("DateTimeException error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }

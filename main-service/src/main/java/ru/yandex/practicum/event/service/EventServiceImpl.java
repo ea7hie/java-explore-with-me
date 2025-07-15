@@ -16,6 +16,7 @@ import ru.yandex.practicum.event.dto.in.UpdateEventUserRequest;
 import ru.yandex.practicum.event.dto.mapper.EventMapper;
 import ru.yandex.practicum.event.model.*;
 import ru.yandex.practicum.exception.ConflictException;
+import ru.yandex.practicum.exception.DateTimeException;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.location.Location;
 import ru.yandex.practicum.location.LocationDto;
@@ -152,10 +153,11 @@ public class EventServiceImpl implements EventService {
                                                 LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                 boolean onlyAvailable, Sort sort, int from, int size,
                                                 String ip, String uri) {
-        statsService.sendHit(uri, ip);
+        if (rangeEnd != null && rangeStart != null && rangeEnd.isBefore(rangeStart)) {
+            throw new DateTimeException("End cannot be earlier than start.");
+        }
 
         List<Event> foundedEvents;
-
         if (text.isEmpty()) {
             foundedEvents = eventRepository.findAllByState(State.PUBLISHED);
         } else {
@@ -175,7 +177,6 @@ public class EventServiceImpl implements EventService {
                     .filter(event -> event.getPaid() == paid)
                     .collect(Collectors.toList());
         }
-
 
         foundedEvents = getEventsFilterByCategories(categories, foundedEvents);
 
@@ -214,6 +215,7 @@ public class EventServiceImpl implements EventService {
                     .collect(Collectors.toList());
         }
 
+        statsService.sendHit(uri, ip);
         eventsView = statsService.getEventsView(foundedEvents);
         return foundedEvents.stream()
                 .map(event -> EventMapper.toEventShortDto(event,
@@ -229,8 +231,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException(String.format("Event with id=%d was not found", eventId));
         }
 
-        statsService.sendHit(uri, ip);
-
+        // statsService.sendHit(uri, ip);
         return EventMapper.toEventFullDto(event,
                 getConfirmedRequests(event),
                 statsService.getEventsView(List.of(event)).getOrDefault(eventId, 0L));
@@ -309,6 +310,7 @@ public class EventServiceImpl implements EventService {
             oldEvent.setState(State.CANCELLED);
             return EventMapper.toEventFullDto(eventRepository.save(oldEvent), 0L, 0L);
         }
+        oldEvent.setState(State.PENDING);
 
         oldEvent.setAnnotation(getNewStringValueForUpdatingEvent(oldEvent.getAnnotation(), updateEvent.getAnnotation()));
         oldEvent.setCategory(getNewCategoryForUpdatingEvent(oldEvent.getCategory(), updateEvent.getCategory()));
@@ -323,7 +325,6 @@ public class EventServiceImpl implements EventService {
                 oldEvent.getRequestModeration(), updateEvent.getRequestModeration())
         );
         oldEvent.setTitle(getNewStringValueForUpdatingEvent(oldEvent.getTitle(), updateEvent.getTitle()));
-
         oldEvent = eventRepository.save(oldEvent);
 
         return EventMapper.toEventFullDto(oldEvent, 0L, 0L);
@@ -353,26 +354,21 @@ public class EventServiceImpl implements EventService {
         }
 
         List<Request> requests = requestRepository.findAllById(dto.getRequestIds());
+        for (Request request : requests) {
+            if (request.getStatus() == Status.CONFIRMED) {
+                throw new ConflictException("Request with id=%d already confirmed.");
+            }
+        }
+
         if (dto.getStatus() == Status.CONFIRMED) {
-            if (event.getParticipantLimit() == 0) {
+            if (event.getParticipantLimit() != 0) {
                 long confirmedRequests = requestRepository.getConfirmedRequests(eventId, Status.CONFIRMED);
                 if (confirmedRequests + dto.getRequestIds().size() <= event.getParticipantLimit()) {
                     requests = requests.stream()
                             .peek(request -> request.setStatus(Status.CONFIRMED))
                             .collect(Collectors.toList());
                 } else {
-                    long limit = event.getParticipantLimit() - confirmedRequests;
-                    List<Request> added = requests.stream()
-                            .limit(limit)
-                            .peek(request -> request.setStatus(Status.CONFIRMED))
-                            .toList();
-                    List<Request> rejected = requests.stream()
-                            .skip(limit)
-                            .peek(request -> request.setStatus(Status.REJECTED))
-                            .toList();
-
-                    requests = new ArrayList<>(added);
-                    requests.addAll(rejected);
+                    throw new ConflictException("Limit is already reached.");
                 }
             }
         } else {
@@ -446,8 +442,8 @@ public class EventServiceImpl implements EventService {
                 : newValue;
     }
 
-    private Category getNewCategoryForUpdatingEvent(Category oldCategory, long newCategory) {
-        return (oldCategory.getId() == newCategory || newCategory == 0L) ? oldCategory
+    private Category getNewCategoryForUpdatingEvent(Category oldCategory, Long newCategory) {
+        return (newCategory == null || Objects.equals(oldCategory.getId(), newCategory) || newCategory == 0L) ? oldCategory
                 : categoryRepository.findById(newCategory)
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Category with id=%d was not found", newCategory))

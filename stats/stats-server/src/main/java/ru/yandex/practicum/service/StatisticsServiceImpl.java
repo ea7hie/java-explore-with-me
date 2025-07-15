@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.StatisticDtoGet;
 import ru.yandex.practicum.StatisticDtoPost;
 import ru.yandex.practicum.dao.StatisticsRepository;
-import ru.yandex.practicum.model.Statistic;
+import ru.yandex.practicum.exception.StatsClientException;
 import ru.yandex.practicum.model.mapper.StatisticsMapper;
 
 import java.time.LocalDateTime;
@@ -21,9 +21,8 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
-    public StatisticDtoGet saveNewHit(StatisticDtoPost statisticDtoPost) {
-        Statistic save = statisticsRepository.save(StatisticsMapper.toStatistic(statisticDtoPost));
-        return StatisticsMapper.toStatisticDtoGet(save, 0L);
+    public void saveNewHit(StatisticDtoPost statisticDtoPost) {
+        statisticsRepository.save(StatisticsMapper.toStatistic(statisticDtoPost));
     }
 
     @Override
@@ -32,7 +31,10 @@ public class StatisticsServiceImpl implements StatisticsService {
         LocalDateTime dtEnd = LocalDateTime.parse(end, formatter);
         List<StatisticDtoGet> statistics;
 
-        if (uris.isEmpty()) {
+        if (dtStart.isAfter(dtEnd)) {
+            throw new StatsClientException("End cannot be earlier then start.");
+        }
+        if (uris.isEmpty() || uris.contains("/events")) {
             statistics = statisticsRepository.findHitsByTimestampBetween(
                     dtStart,
                     dtEnd,

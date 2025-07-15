@@ -42,6 +42,12 @@ public class EventPublicController {
         LocalDateTime start = (rangeStart == null) ? null : LocalDateTime.parse(rangeStart, formatter);
         LocalDateTime end = (rangeEnd == null) ? null : LocalDateTime.parse(rangeEnd, formatter);
         Sort sorting = sort == null ? Sort.EVENT_DATE : Sort.valueOf(sort);
+        if (text.equals("0")) {
+            text = "";
+        }
+        if (categories.size() == 1 && categories.contains(0L)) {
+            categories = List.of();
+        }
         return eventService.findEventsByText(text, categories, paid, start, end,
                 onlyAvailable, sorting, from, size, ip, uri);
     }

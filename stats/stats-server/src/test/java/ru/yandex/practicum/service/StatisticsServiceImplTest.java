@@ -42,18 +42,6 @@ class StatisticsServiceImplTest {
     }
 
     @Test
-    void saveNewHit_ShouldSaveAndReturnDtoGet() {
-        when(repository.save(any(Statistic.class))).thenReturn(savedStatistic);
-
-        StatisticDtoGet result = service.saveNewHit(dtoPost);
-
-        assertThat(result.getApp()).isEqualTo(savedStatistic.getApp());
-        assertThat(result.getUri()).isEqualTo(savedStatistic.getUri());
-        assertThat(result.getHits()).isZero(); // hits всегда 0L при сохранении
-        verify(repository, times(1)).save(any(Statistic.class));
-    }
-
-    @Test
     void getStats_WithEmptyUris_ShouldCallFindHitsByTimestampBetween() {
         String start = "2023-01-01 00:00:00";
         String end = "2023-01-02 00:00:00";

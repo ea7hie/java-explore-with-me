@@ -1,6 +1,7 @@
 package ru.yandex.practicum.event.dto.in;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.Future;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ public class UpdateEventUserRequest {
     String description;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Future
     LocalDateTime eventDate;
 
     LocationDto location;

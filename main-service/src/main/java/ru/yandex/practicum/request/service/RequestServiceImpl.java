@@ -32,6 +32,8 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto makeRequest(long userId, long eventId) {
+        LocalDateTime now = LocalDateTime.now();
+
         User requester = getUserOrThrow(userId);
 
         Event event = eventRepository.findById(eventId)
@@ -50,19 +52,21 @@ public class RequestServiceImpl implements RequestService {
             throw new ConflictException("Request have been already send");
         }
 
-        long confirmedRequests = requestRepository.getConfirmedRequests(eventId, Status.CONFIRMED);
-        if (confirmedRequests >= event.getParticipantLimit()) {
-            throw new ConflictException("Cannot send request because limit has been reached");
+        if (event.getParticipantLimit() != 0) {
+            long confirmedRequests = requestRepository.getConfirmedRequests(eventId, Status.CONFIRMED);
+            if (confirmedRequests >= event.getParticipantLimit()) {
+                throw new ConflictException("Cannot send request because limit has been reached");
+            }
         }
 
         Request request = new Request();
         request.setEvent(event);
         request.setRequester(requester);
-        request.setStatus(event.getRequestModeration() ? Status.PENDING : Status.CONFIRMED);
-        request.setCreated(LocalDateTime.now());
+        request.setStatus((!event.getRequestModeration() || event.getParticipantLimit() == 0) ? Status.CONFIRMED
+                : Status.PENDING);
+        request.setCreated(now);
 
-        Request saved = requestRepository.save(request);
-        return RequestMapper.toParticipationRequestDto(saved);
+        return RequestMapper.toParticipationRequestDto(requestRepository.save(request));
     }
 
     @Override
@@ -83,7 +87,10 @@ public class RequestServiceImpl implements RequestService {
             throw new NotFoundException(String.format("Request with id=%d was not found", requestId));
         }
         Request request = opt.get();
-        request.setStatus(Status.REJECTED);
+        if (request.getStatus() == Status.CONFIRMED) {
+            throw new ConflictException(String.format("Request with id=%d have been already confirmed", requestId));
+        }
+        request.setStatus(Status.CANCELED);
         return RequestMapper.toParticipationRequestDto(requestRepository.save(request));
     }
 
