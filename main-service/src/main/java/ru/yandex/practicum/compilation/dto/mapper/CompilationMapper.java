@@ -19,8 +19,3 @@ public class CompilationMapper {
         return new Compilation(-1L, events, newCompilationDto.getPinned(), newCompilationDto.getTitle());
     }
 }
-
-
-/*Compilation updateEntity(UpdateCompilationRequest updateRequest,
-                         @MappingTarget Compilation compilation,
-                         @Context List<Event> events);*/

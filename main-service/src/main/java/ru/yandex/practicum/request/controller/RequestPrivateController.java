@@ -37,5 +37,4 @@ public class RequestPrivateController {
         log.info("user with id={} delete request with id={}", userId, requestId);
         return requestService.deleteRequest(userId, requestId);
     }
-
 }
