@@ -53,7 +53,7 @@ public class EventPublicController {
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto findEventsById(@PathVariable long eventId, HttpServletRequest request) {
+    public EventFullDto findEventsById(@PathVariable @Positive long eventId, HttpServletRequest request) {
         String ip = request.getRemoteAddr();
         String uri = request.getRequestURI();
         log.info("get event by id {}. client ip: {}", eventId, ip);
