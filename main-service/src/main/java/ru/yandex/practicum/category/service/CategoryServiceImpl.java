@@ -2,6 +2,7 @@ package ru.yandex.practicum.category.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.category.dao.CategoryRepository;
@@ -35,9 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryDto> findAll(int from, int size) {
-        return categoryRepository.findAll().stream()
-                .skip(from)
-                .limit(size)
+        return categoryRepository.findAll(PageRequest.of(from, size)).getContent().stream()
                 .map(CategoryMapper::toCategoryDto)
                 .toList();
     }

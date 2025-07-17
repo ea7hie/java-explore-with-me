@@ -9,10 +9,10 @@ import java.util.List;
 @Data
 public class UpdateCompilationRequest {
     @UniqueElements
-    List<Long> events;
+    private List<Long> events;
 
-    Boolean pinned;
+    private Boolean pinned;
 
     @Length(min = 1, max = 50)
-    String title;
+    private String title;
 }

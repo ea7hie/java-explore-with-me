@@ -15,10 +15,10 @@ import org.hibernate.validator.constraints.Length;
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @NotBlank
     @Length(max = 50)
     @Column(unique = true)
-    String name;
+    private String name;
 }

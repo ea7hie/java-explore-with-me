@@ -2,6 +2,8 @@ package ru.yandex.practicum.location;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,11 +16,15 @@ import lombok.NoArgsConstructor;
 public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column
-    Float lat;
+    @Max(90)
+    @Min(-90)
+    private Float lat;
 
     @Column
-    Float lon;
+    @Max(180)
+    @Min(-180)
+    private Float lon;
 }

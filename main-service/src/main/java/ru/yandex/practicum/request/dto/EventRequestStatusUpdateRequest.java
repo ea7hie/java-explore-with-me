@@ -16,7 +16,7 @@ import java.util.List;
 public class EventRequestStatusUpdateRequest {
     @NotEmpty
     @UniqueElements
-    List<Long> requestIds = new ArrayList<>();
+    private List<Long> requestIds = new ArrayList<>();
 
-    Status status;
+    private Status status;
 }

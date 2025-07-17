@@ -154,4 +154,18 @@ public class ErrorHandler {
         log.error("DateTimeException error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(Throwable.class)
+    public ResponseEntity<ErrorResponse> handleDateTimeException(Throwable ex) {
+        ErrorResponse response = new ErrorResponse(
+                "Exception in service.",
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                LocalDateTime.now().format(dateTimeFormatter)
+        );
+
+        log.error("Exception in service: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
 }

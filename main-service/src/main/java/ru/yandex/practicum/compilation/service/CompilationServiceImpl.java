@@ -12,6 +12,7 @@ import ru.yandex.practicum.compilation.dto.mapper.CompilationMapper;
 import ru.yandex.practicum.compilation.model.Compilation;
 import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.event.dto.get.EventFullDto;
+import ru.yandex.practicum.event.dto.get.EventWithConfirmedRequests;
 import ru.yandex.practicum.event.dto.mapper.EventMapper;
 import ru.yandex.practicum.event.model.Event;
 import ru.yandex.practicum.event.service.StatsService;
@@ -52,11 +53,14 @@ public class CompilationServiceImpl implements CompilationService {
             }
         }
 
+        List<Long> ids = events.stream().map(Event::getId).collect(Collectors.toList());
+        Map<Long, Long>  confirmedRequests = getConfirmedRequestsForList(ids);
+
         Compilation saved = compilationRepository.save(CompilationMapper.toCompilation(newCompilationDto, events));
         Map<Long, Long> eventsView = statsService.getEventsView(events);
         List<EventFullDto> eventFullDtos = events.stream()
                 .map(event -> EventMapper.toEventFullDto(event,
-                        getConfirmedRequests(event),
+                        confirmedRequests.getOrDefault(event.getId(), 0L),
                         eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                 .collect(Collectors.toList());
 
@@ -79,9 +83,12 @@ public class CompilationServiceImpl implements CompilationService {
                 oldComp.setEvents(newEvents);
 
                 Map<Long, Long> eventsView = statsService.getEventsView(newEvents);
+                List<Long> ids = newEvents.stream().map(Event::getId).collect(Collectors.toList());
+                Map<Long, Long>  confirmedRequests = getConfirmedRequestsForList(ids);
+
                 eventFullDtos = newEvents.stream()
                         .map(event -> EventMapper.toEventFullDto(event,
-                                getConfirmedRequests(event),
+                                confirmedRequests.getOrDefault(event.getId(), 0L),
                                 eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                         .collect(Collectors.toList());
             }
@@ -89,9 +96,12 @@ public class CompilationServiceImpl implements CompilationService {
             List<Event> oldEvents = eventRepository.findAllById(oldComp.getEvents().stream().map(Event::getId).toList());
 
             Map<Long, Long> eventsView = statsService.getEventsView(oldEvents);
+            List<Long> ids = oldEvents.stream().map(Event::getId).collect(Collectors.toList());
+            Map<Long, Long>  confirmedRequests = getConfirmedRequestsForList(ids);
+
             eventFullDtos = oldEvents.stream()
                     .map(event -> EventMapper.toEventFullDto(event,
-                            getConfirmedRequests(event),
+                            confirmedRequests.getOrDefault(event.getId(), 0L),
                             eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                     .collect(Collectors.toList());
         }
@@ -137,9 +147,12 @@ public class CompilationServiceImpl implements CompilationService {
         List<Event> distinctEvents = finalAllEvents.stream().distinct().collect(Collectors.toList());
         Map<Long, Long> eventsView = statsService.getEventsView(distinctEvents);
 
+        List<Long> ids = distinctEvents.stream().map(Event::getId).collect(Collectors.toList());
+        Map<Long, Long>  confirmedRequests = getConfirmedRequestsForList(ids);
+
         List<EventFullDto> eventFullDtos = distinctEvents.stream()
                 .map(event -> EventMapper.toEventFullDto(event,
-                        getConfirmedRequests(event),
+                        confirmedRequests.getOrDefault(event.getId(), 0L),
                         (eventsView.get(event.getId()) == null || eventsView.isEmpty()) ? 0L
                                 : eventsView.get(event.getId())))
                 .toList();
@@ -162,17 +175,22 @@ public class CompilationServiceImpl implements CompilationService {
                 new NotFoundException(String.format("Compilation with id=%d was not found", compId))
         );
 
+        List<Long> ids = compilation.getEvents().stream().map(Event::getId).collect(Collectors.toList());
+        Map<Long, Long>  confirmedRequests = getConfirmedRequestsForList(ids);
         Map<Long, Long> eventsView = statsService.getEventsView(compilation.getEvents());
+
         List<EventFullDto> eventFullDtos = compilation.getEvents().stream()
                 .map(event -> EventMapper.toEventFullDto(event,
-                        getConfirmedRequests(event),
+                        confirmedRequests.getOrDefault(event.getId(), 0L),
                         eventsView.get(event.getId()) == null ? 0L : eventsView.get(event.getId())))
                 .toList();
 
         return CompilationMapper.toCompilationDto(compilation, eventFullDtos);
     }
 
-    private long getConfirmedRequests(Event event) {
-        return requestRepository.getConfirmedRequests(event.getId(), Status.CONFIRMED);
+    private Map<Long, Long> getConfirmedRequestsForList(List<Long> ids) {
+        return requestRepository.getConfirmedRequests(ids, Status.CONFIRMED).stream()
+                .collect(Collectors.toMap(EventWithConfirmedRequests::getId, EventWithConfirmedRequests::getRequests));
     }
+
 }

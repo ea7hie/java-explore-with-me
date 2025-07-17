@@ -18,33 +18,33 @@ import java.time.LocalDateTime;
 public class NewEventDto {
     @NotBlank
     @Length(min = 20, max = 2000)
-    String annotation;
+    private  String annotation;
 
     @NotNull
-    Long category;
+    private Long category;
 
     @NotBlank
     @Length(min = 20, max = 7000)
-    String description;
+    private String description;
 
     @NotNull
     @Future
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime eventDate;
+    private LocalDateTime eventDate;
 
     @NotNull
-    LocationDto location;
+    private LocationDto location;
 
     @NotNull
-    Boolean paid = false;
+    private Boolean paid = false;
 
     @NotNull
-    Integer participantLimit = 0;
+    private Integer participantLimit = 0;
 
     @NotNull
-    Boolean requestModeration = true;
+    private Boolean requestModeration = true;
 
     @NotBlank
     @Length(min = 3, max = 120)
-    String title;
+    private String title;
 }

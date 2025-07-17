@@ -13,10 +13,10 @@ import org.hibernate.validator.constraints.Length;
 public class UserDtoPost {
     @NotBlank
     @Length(min = 2, max = 250)
-    String name;
+    private String name;
 
     @NotBlank
     @Length(min = 6, max = 254)
     @Email
-    String email;
+    private String email;
 }

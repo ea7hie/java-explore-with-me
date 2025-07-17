@@ -11,11 +11,11 @@ import java.util.List;
 @Data
 public class NewCompilationDto {
     @UniqueElements
-    List<Long> events;
+    private List<Long> events;
 
-    Boolean pinned = false;
+    private Boolean pinned = false;
 
     @NotBlank(message = "Field: title. Error: must not be blank. Value: null")
     @Length(min = 1, max = 50)
-    String title;
+    private String title;
 }

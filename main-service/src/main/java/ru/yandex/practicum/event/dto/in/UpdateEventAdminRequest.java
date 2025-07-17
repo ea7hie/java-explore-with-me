@@ -16,24 +16,24 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class UpdateEventAdminRequest {
     @Length(min = 20, max = 2000)
-    String annotation;
+    private String annotation;
 
-    Long category;
+    private Long category;
 
     @Length(min = 20, max = 7000)
-    String description;
+    private String description;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Future
 
-    LocalDateTime eventDate;
+    private  LocalDateTime eventDate;
 
-    LocationDto location;
-    Boolean paid;
-    Integer participantLimit;
-    Boolean requestModeration;
-    StateActionForAdmin stateAction;
+    private LocationDto location;
+    private Boolean paid;
+    private Integer participantLimit;
+    private Boolean requestModeration;
+    private StateActionForAdmin stateAction;
 
     @Length(min = 3, max = 120)
-    String title;
+    private String title;
 }

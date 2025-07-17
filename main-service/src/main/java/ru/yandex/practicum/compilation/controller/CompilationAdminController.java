@@ -1,8 +1,10 @@
 package ru.yandex.practicum.compilation.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.compilation.dto.CompilationDto;
 import ru.yandex.practicum.compilation.dto.NewCompilationDto;
@@ -12,6 +14,7 @@ import ru.yandex.practicum.compilation.service.CompilationService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/compilations")
+@Validated
 public class CompilationAdminController {
     private final CompilationService compilationService;
 
@@ -22,14 +25,14 @@ public class CompilationAdminController {
     }
 
     @PatchMapping("/{compId}")
-    public CompilationDto updateComp(@PathVariable("compId") Long compId,
+    public CompilationDto updateComp(@PathVariable("compId") @Positive Long compId,
                                      @RequestBody @Valid UpdateCompilationRequest updateCompilationRequest) {
         return compilationService.update(compId, updateCompilationRequest);
     }
 
     @DeleteMapping("/{compId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable("compId") Long compId) {
+    public void delete(@PathVariable("compId") @Positive Long compId) {
         compilationService.delete(compId);
     }
 }
