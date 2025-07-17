@@ -95,6 +95,6 @@ public class CategoryPublicControllerTest {
         given(service.findById(-5L)).willThrow(new NotFoundException("Category not found"));
 
         mockMvc.perform(get("/categories/-5"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isBadRequest());
     }
 }

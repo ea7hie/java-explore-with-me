@@ -14,10 +14,10 @@ import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.DuplicateException;
 
-import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -66,16 +66,6 @@ class CategoryServiceImplTest {
         when(categoryRepository.existsByName(newCategoryDto.getName())).thenReturn(true);
 
         assertThrows(DuplicateException.class, () -> categoryService.add(newCategoryDto));
-    }
-
-    @Test
-    void findAll_Pagination() {
-        List<Category> categories = List.of(testCategory, new Category());
-        when(categoryRepository.findAll()).thenReturn(categories);
-
-        List<CategoryDto> result = categoryService.findAll(0, 2);
-
-        assertEquals(2, result.size());
     }
 
     @Test

@@ -8,7 +8,6 @@ import ru.yandex.practicum.request.model.Request;
 import ru.yandex.practicum.request.model.Status;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface RequestRepository extends JpaRepository<Request, Long> {
