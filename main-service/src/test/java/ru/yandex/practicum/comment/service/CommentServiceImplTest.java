@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
 import ru.yandex.practicum.comment.dao.CommentRepository;
 import ru.yandex.practicum.comment.dto.CommentDto;
 import ru.yandex.practicum.comment.dto.NewCommentDto;
@@ -14,21 +13,17 @@ import ru.yandex.practicum.comment.model.Comment;
 import ru.yandex.practicum.comment.model.CommentState;
 import ru.yandex.practicum.event.dao.EventRepository;
 import ru.yandex.practicum.event.model.Event;
-import ru.yandex.practicum.event.model.State;
 import ru.yandex.practicum.event.service.StatsService;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.exception.OperationNotAllowedException;
 import ru.yandex.practicum.request.dao.RequestRepository;
-import ru.yandex.practicum.request.model.Status;
 import ru.yandex.practicum.user.dao.UserRepository;
 import ru.yandex.practicum.user.model.User;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
