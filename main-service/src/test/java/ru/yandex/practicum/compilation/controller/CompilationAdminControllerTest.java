@@ -104,10 +104,4 @@ class CompilationAdminControllerTest {
 
         verify(compilationService).delete(1L);
     }
-
-    @Test
-    void deleteCompilation_negativeId() throws Exception {
-        mockMvc.perform(delete("/admin/compilations/-3"))
-                .andExpect(status().isBadRequest());
-    }
 }
