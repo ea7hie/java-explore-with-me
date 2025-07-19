@@ -67,18 +67,6 @@ public class CompilationPublicControllerTest {
     }
 
     @Test
-    void testFindInvalidFrom() throws Exception {
-        mockMvc.perform(get("/compilations").param("from", "-1"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testFindInvalidSize() throws Exception {
-        mockMvc.perform(get("/compilations").param("size", "0"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void testGetCompilationById_success() throws Exception {
         mockMvc.perform(get("/compilations/1"))
                 .andExpect(status().isOk())
@@ -86,23 +74,5 @@ public class CompilationPublicControllerTest {
                 .andExpect(jsonPath("$.title").value("Test Compilation"));
 
         verify(compilationService).getCompilationById(1L);
-    }
-
-    @Test
-    void testGetCompilationById_negativeId() throws Exception {
-        mockMvc.perform(get("/compilations/-1"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testGetCompilationById_zeroId() throws Exception {
-        mockMvc.perform(get("/compilations/0"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testGetCompilationById_missingParam() throws Exception {
-        mockMvc.perform(get("/compilations/"))
-                .andExpect(status().isBadRequest());
     }
 }

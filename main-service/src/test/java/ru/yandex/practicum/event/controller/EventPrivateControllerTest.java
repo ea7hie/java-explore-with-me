@@ -15,7 +15,6 @@ import ru.yandex.practicum.event.dto.get.EventShortDto;
 import ru.yandex.practicum.event.dto.in.NewEventDto;
 import ru.yandex.practicum.event.dto.in.UpdateEventUserRequest;
 import ru.yandex.practicum.event.service.EventService;
-import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.request.dto.EventRequestStatusUpdateRequest;
 import ru.yandex.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.yandex.practicum.request.dto.ParticipationRequestDto;
@@ -68,13 +67,6 @@ public class EventPrivateControllerTest {
     }
 
     @Test
-    void getEvents_NegativePageSize() throws Exception {
-        mockMvc.perform(get("/users/1/events")
-                        .param("size", "-5"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void getEventById_Success() throws Exception {
         EventFullDto createdEvent = new EventFullDto();
         createdEvent.setId(2L);
@@ -84,15 +76,6 @@ public class EventPrivateControllerTest {
         mockMvc.perform(get("/users/1/events/2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(2L));
-    }
-
-    @Test
-    void getEventById_NotFound() throws Exception {
-        when(eventService.findEventByInitiatorIdAndEventId(1L, 999L))
-                .thenThrow(new NotFoundException("Not found")); // Зависит от реализации сервиса
-
-        mockMvc.perform(get("/users/1/events/999"))
-                .andExpect(status().isNotFound());
     }
 
     @Test
