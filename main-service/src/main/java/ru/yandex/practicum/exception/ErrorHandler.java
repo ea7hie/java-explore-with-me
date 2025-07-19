@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -17,7 +18,10 @@ import java.time.format.DateTimeFormatter;
 public class ErrorHandler {
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
         ErrorResponse response = new ErrorResponse(
                 "The required object was not found.",
@@ -31,6 +35,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(DuplicateException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateException ex) {
         ErrorResponse response = new ErrorResponse(
                 "Integrity constraint has been violated.",
@@ -44,6 +49,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleInvalidArgument(MethodArgumentNotValidException ex) {
         FieldError firstError = ex.getBindingResult().getFieldErrors().get(0);
 
@@ -64,6 +70,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
         ErrorResponse response = new ErrorResponse(
                 "For the requested operation the conditions are not met.",
@@ -77,6 +84,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(OperationNotAllowedException.class)
     public ResponseEntity<ErrorResponse> handleOperationNotAllowed(OperationNotAllowedException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 "For the requested operation the conditions are not met",
@@ -88,6 +96,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String message = String.format(
                 "Failed to convert value of type %s to required type %s",
@@ -107,6 +116,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(Exception ex) {
         ErrorResponse response = new ErrorResponse(
                 "Unknown mistake.",
@@ -120,6 +130,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(StatsClientException.class)
     public ResponseEntity<ErrorResponse> handleStatsClientException(StatsClientException ex) {
         ErrorResponse response = new ErrorResponse(
                 "Error in stats-server.",
@@ -133,6 +144,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(DateTimeException.class)
     public ResponseEntity<ErrorResponse> handleDateTimeException(DateTimeException ex) {
         ErrorResponse response = new ErrorResponse(
                 "Wrong value of the input date",
@@ -146,6 +158,7 @@ public class ErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(Throwable.class)
     public ResponseEntity<ErrorResponse> handleDateTimeException(Throwable ex) {
         ErrorResponse response = new ErrorResponse(
                 "Exception in service.",
