@@ -1,6 +1,5 @@
 package ru.yandex.practicum.comment.controller;
 
-import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import ru.yandex.practicum.comment.dto.NewCommentDto;
 import ru.yandex.practicum.comment.service.CommentService;
 import ru.yandex.practicum.exception.NotFoundException;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -72,18 +70,16 @@ public class CommentPrivateControllerTest {
     }
 
     @Test
-    void updateComment_CommentNotFound() {
+    void updateComment_CommentNotFound() throws Exception {
         final long userId = 10L;
         final long commentId = 999L;
         doThrow(new NotFoundException("Comment not found"))
                 .when(commentService).updateComment(userId, commentId, newCommentDtoMock);
 
-        assertThrows(ServletException.class, () -> {
-            mockMvc.perform(patch("/user/{userId}/comment/{commentId}", userId, commentId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(asJsonString(newCommentDtoMock)))
-                    .andExpect(status().isNotFound());
-        });
+        mockMvc.perform(patch("/user/{userId}/comment/{commentId}", userId, commentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(newCommentDtoMock)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -97,16 +93,15 @@ public class CommentPrivateControllerTest {
     }
 
     @Test
-    void deleteComment_NotFound() {
+    void deleteComment_NotFound() throws Exception {
         final long userId = 5L;
         final long commentId = 888L;
         doThrow(new NotFoundException("Comment not found"))
                 .when(commentService).deleteComment(userId, commentId);
 
-        assertThrows(ServletException.class, () -> {
-            mockMvc.perform(delete("/user/{userId}/comment/{commentId}", userId, commentId))
-                    .andExpect(status().isNotFound());
-        });
+        mockMvc.perform(delete("/user/{userId}/comment/{commentId}", userId, commentId))
+                .andExpect(status().isNotFound());
+
     }
 
     private static String asJsonString(final Object obj) {

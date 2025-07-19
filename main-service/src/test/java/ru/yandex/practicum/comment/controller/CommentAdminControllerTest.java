@@ -1,6 +1,5 @@
 package ru.yandex.practicum.comment.controller;
 
-import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import ru.yandex.practicum.comment.service.CommentService;
 import ru.yandex.practicum.exception.NotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -35,7 +33,7 @@ public class CommentAdminControllerTest {
 
     @BeforeEach
     void setup() {
-        mockedCommentDto = new CommentDto(); // Инициализация DTO по необходимости
+        mockedCommentDto = new CommentDto();
     }
 
     @Test
@@ -56,11 +54,10 @@ public class CommentAdminControllerTest {
         Long commentId = -1L;
         boolean isConfirm = false;
 
-        assertThrows(ServletException.class, () -> {
-            mockMvc.perform(patch("/admin/comment/{commentId}", commentId)
-                            .param("isConfirm", String.valueOf(isConfirm)))
-                    .andExpect(status().isBadRequest());
-        });
+        mockMvc.perform(patch("/admin/comment/{commentId}", commentId)
+                        .param("isConfirm", String.valueOf(isConfirm)))
+                .andExpect(status().isBadRequest());
+
     }
 
     @Test
@@ -70,11 +67,9 @@ public class CommentAdminControllerTest {
         doThrow(new NotFoundException("Comment not found"))
                 .when(commentService).updateCommentStatusByAdmin(anyLong(), anyBoolean());
 
-        assertThrows(ServletException.class, () -> {
-            mockMvc.perform(patch("/admin/comment/{commentId}", commentId)
-                            .param("isConfirm", String.valueOf(isConfirm)))
-                    .andExpect(status().isNotFound());
-        });
+        mockMvc.perform(patch("/admin/comment/{commentId}", commentId)
+                        .param("isConfirm", String.valueOf(isConfirm)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
