@@ -19,8 +19,8 @@ public class StatsController {
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public StatisticDtoGet record(@RequestBody StatisticDtoPost statisticDtoPost) {
-        return statisticsService.saveNewHit(statisticDtoPost);
+    public void record(@RequestBody StatisticDtoPost statisticDtoPost) {
+        statisticsService.saveNewHit(statisticDtoPost);
     }
 
     @GetMapping("/stats")

@@ -6,7 +6,7 @@ import ru.yandex.practicum.StatisticDtoPost;
 import java.util.List;
 
 public interface StatisticsService {
-    StatisticDtoGet saveNewHit(StatisticDtoPost statisticDtoPost);
+    void saveNewHit(StatisticDtoPost statisticDtoPost);
 
     List<StatisticDtoGet> getStats(String start, String end, List<String> uris, Boolean unique);
 }

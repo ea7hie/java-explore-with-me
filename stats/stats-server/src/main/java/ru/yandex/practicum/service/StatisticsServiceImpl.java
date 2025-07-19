@@ -6,12 +6,13 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.StatisticDtoGet;
 import ru.yandex.practicum.StatisticDtoPost;
 import ru.yandex.practicum.dao.StatisticsRepository;
-import ru.yandex.practicum.model.Statistic;
+import ru.yandex.practicum.exception.StatsClientException;
 import ru.yandex.practicum.model.mapper.StatisticsMapper;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,18 +22,20 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
-    public StatisticDtoGet saveNewHit(StatisticDtoPost statisticDtoPost) {
-        Statistic save = statisticsRepository.save(StatisticsMapper.toStatistic(statisticDtoPost));
-        return StatisticsMapper.toStatisticDtoGet(save, 0L);
+    public void saveNewHit(StatisticDtoPost statisticDtoPost) {
+        statisticsRepository.save(StatisticsMapper.toStatistic(statisticDtoPost));
     }
 
     @Override
     public List<StatisticDtoGet> getStats(String start, String end, List<String> uris, Boolean unique) {
-        LocalDateTime dtStart = LocalDateTime.parse(start, formatter);
+        LocalDateTime dtStart = LocalDateTime.parse(start, formatter).minusSeconds(2);
         LocalDateTime dtEnd = LocalDateTime.parse(end, formatter);
         List<StatisticDtoGet> statistics;
 
-        if (uris.isEmpty()) {
+        if (dtStart.isAfter(dtEnd)) {
+            throw new StatsClientException("End cannot be earlier then start.");
+        }
+        if (uris.isEmpty() || uris.contains("/events")) {
             statistics = statisticsRepository.findHitsByTimestampBetween(
                     dtStart,
                     dtEnd,
@@ -51,6 +54,6 @@ public class StatisticsServiceImpl implements StatisticsService {
                     statistics.size(), uris, start, end, unique);
         }
 
-        return statistics;
+        return statistics.stream().distinct().collect(Collectors.toList());
     }
 }

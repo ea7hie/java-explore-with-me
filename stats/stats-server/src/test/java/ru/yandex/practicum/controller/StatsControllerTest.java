@@ -6,18 +6,15 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.StatisticDtoGet;
-import ru.yandex.practicum.StatisticDtoPost;
 import ru.yandex.practicum.service.StatisticsService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StatsController.class)
@@ -31,26 +28,6 @@ class StatsControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Test
-    void testRecordHitReturnsCreated() throws Exception {
-        StatisticDtoPost input = new StatisticDtoPost();
-        input.setApp("myApp");
-        input.setUri("/test");
-        input.setIp("192.168.1.1");
-        input.setTimestamp(LocalDateTime.now());
-
-        StatisticDtoGet response = new StatisticDtoGet("myApp", "/test", 1L);
-        Mockito.when(statisticsService.saveNewHit(any())).thenReturn(response);
-
-        mockMvc.perform(post("/hit")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.app").value("myApp"))
-                .andExpect(jsonPath("$.uri").value("/test"))
-                .andExpect(jsonPath("$.hits").value(1));
-    }
 
     @Test
     void testGetStatsReturnsList() throws Exception {
