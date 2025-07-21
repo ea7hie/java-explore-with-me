@@ -9,8 +9,6 @@ import ru.yandex.practicum.event.model.Event;
 import ru.yandex.practicum.user.dto.mapper.UserMapper;
 import ru.yandex.practicum.user.model.User;
 
-import java.time.LocalDateTime;
-
 
 @UtilityClass
 public class CommentMapper {
@@ -19,7 +17,6 @@ public class CommentMapper {
         comment.setEvent(event);
         comment.setAuthor(author);
         comment.setText(newCommentDto.getText());
-        comment.setCreatedOn(LocalDateTime.now());
         return comment;
     }
 
