@@ -102,6 +102,7 @@ public class CommentServiceImpl implements CommentService {
                 || eventsView.get(comment.getEvent().getId()) == 0L) ? 0L : eventsView.get(comment.getEvent().getId());
         long confirmedRequests = getConfirmedRequests(comment.getEvent());
 
+        comment.setUpdatedOn(LocalDateTime.now());
         comment = commentRepository.save(comment);
 
         return CommentMapper.toCommentDto(comment, confirmedRequests, views);

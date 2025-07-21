@@ -6,9 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import ru.yandex.practicum.event.model.Event;
 import ru.yandex.practicum.user.model.User;
 
@@ -19,7 +16,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "comments")
-@EntityListeners(AuditingEntityListener.class)
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,11 +38,9 @@ public class Comment {
     private CommentState state = CommentState.PENDING;
 
     @Column(name = "created_on")
-    @CreatedDate
     private LocalDateTime createdOn;
 
     @Column(name = "updated_on")
-    @LastModifiedDate
     private LocalDateTime updatedOn;
 
     @Column(name = "published_on")
