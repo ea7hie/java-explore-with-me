@@ -22,6 +22,7 @@ import ru.yandex.practicum.request.model.Status;
 import ru.yandex.practicum.user.dao.UserRepository;
 import ru.yandex.practicum.user.model.User;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -101,6 +102,8 @@ public class CommentServiceImpl implements CommentService {
                 || eventsView.get(comment.getEvent().getId()) == 0L) ? 0L : eventsView.get(comment.getEvent().getId());
         long confirmedRequests = getConfirmedRequests(comment.getEvent());
 
+        comment = commentRepository.save(comment);
+
         return CommentMapper.toCommentDto(comment, confirmedRequests, views);
     }
 
@@ -129,6 +132,8 @@ public class CommentServiceImpl implements CommentService {
         } else {
             comment.setState(CommentState.REJECTED);
         }
+
+        comment.setPublishedOn(LocalDateTime.now());
 
         Map<Long, Long> eventsView = statsService.getEventsView(List.of(comment.getEvent()));
         long views = (eventsView.get(comment.getEvent().getId()) == null || eventsView.isEmpty()
