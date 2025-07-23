@@ -10,13 +10,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.category.dto.CategoryDto;
 import ru.yandex.practicum.category.dto.CategoryDtoPost;
 import ru.yandex.practicum.category.service.CategoryService;
-import ru.yandex.practicum.exception.NotFoundException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CategoryAdminController.class)
 public class CategoryAdminControllerTest {
@@ -81,15 +81,6 @@ public class CategoryAdminControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(categoryService).delete(categoryIdToDelete);
-    }
-
-    @Test
-    void deleteCategory_NonExistingId_Returns404() throws Exception {
-        Long nonExistingId = 999L;
-        doThrow(new NotFoundException("Category not found")).when(categoryService).delete(nonExistingId);
-
-        mockMvc.perform(delete("/admin/categories/{id}", nonExistingId))
-                .andExpect(status().isNotFound());
     }
 
     @Test

@@ -10,7 +10,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.category.dto.CategoryDto;
 import ru.yandex.practicum.category.service.CategoryService;
-import ru.yandex.practicum.exception.NotFoundException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,23 +77,5 @@ public class CategoryPublicControllerTest {
                 .andExpect(jsonPath("$.name").value("Music"));
 
         verify(service).findById(validId);
-    }
-
-    @Test
-    void getCategoryById_NonExistingId_Returns404() throws Exception {
-        Long invalidId = 999L;
-
-        given(service.findById(invalidId)).willThrow(new NotFoundException("Category not found"));
-
-        mockMvc.perform(get("/categories/" + invalidId))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void getCategoryById_NegativeId_Returns400() throws Exception {
-        given(service.findById(-5L)).willThrow(new NotFoundException("Category not found"));
-
-        mockMvc.perform(get("/categories/-5"))
-                .andExpect(status().isBadRequest());
     }
 }

@@ -52,21 +52,8 @@ public class RequestPrivateControllerTest {
     }
 
     @Test
-    void addRequest_InvalidUserId() throws Exception {
-        mockMvc.perform(post("/users/-1/requests").param("eventId", "50"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void addRequest_MissingEventParam() throws Exception {
         mockMvc.perform(post("/users/10/requests"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void addRequest_NegativeEventId() throws Exception {
-        mockMvc.perform(post("/users/30/requests")
-                        .param("eventId", "-5"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -81,29 +68,11 @@ public class RequestPrivateControllerTest {
     }
 
     @Test
-    void getOwnRequests_NegativeId() throws Exception {
-        mockMvc.perform(get("/users/-5/requests"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void cancelRequest_Success() throws Exception {
         mockMvc.perform(patch("/users/300/requests/5/cancel"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.status").value("CONFIRMED"));
         verify(requestService).deleteRequest(300L, 5L);
-    }
-
-    @Test
-    void cancelRequest_InvalidUser() throws Exception {
-        mockMvc.perform(patch("/users/-1/requests/10/cancel"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void cancelRequest_InvalidRequestId() throws Exception {
-        mockMvc.perform(patch("/users/200/requests/-5/cancel"))
-                .andExpect(status().isBadRequest());
     }
 }

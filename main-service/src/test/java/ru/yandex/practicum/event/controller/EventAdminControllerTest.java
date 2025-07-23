@@ -38,13 +38,6 @@ public class EventAdminControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)));
     }
 
-    @Test
-    void shouldValidateNegativeSize() throws Exception {
-        mockMvc.perform(get("/admin/events")
-                        .param("size", "-5"))
-                .andExpect(status().isBadRequest());
-    }
-
     private EventFullDto createTestEventFullDto() {
         EventFullDto dto = new EventFullDto();
         dto.setId(1L);

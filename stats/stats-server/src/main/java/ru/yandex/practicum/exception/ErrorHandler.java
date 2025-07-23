@@ -39,7 +39,7 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(Exception ex) {
-                ErrorResponse response = new ErrorResponse(
+        ErrorResponse response = new ErrorResponse(
                 "Unknown mistake.",
                 ex.getMessage(),
                 HttpStatus.BAD_REQUEST,
